@@ -1,18 +1,31 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: "#2563EB", // Example Blue
-        secondary: "#1E40AF",
-        dark: "#111827",
-        light: "#F3F4F6",
-      },
+    content: [
+        "./index.html",
+        "./src/**/*.{js,ts,jsx,tsx}",
+    ],
+    darkMode: 'class', // Enable class-based dark mode
+    theme: {
+        extend: {
+            colors: {
+                primary: {
+                    50: '#eff6ff',
+                    100: '#dbeafe',
+                    500: '#3b82f6',
+                    600: '#2563eb',
+                    700: '#1d4ed8',
+                },
+                secondary: {
+                    500: '#64748b',
+                },
+                dark: {
+                    bg: '#0f172a',
+                    surface: '#1e293b',
+                    text: '#f1f5f9',
+                    border: '#334155'
+                }
+            }
+        },
     },
-  },
-  plugins: [],
+    plugins: [],
 }

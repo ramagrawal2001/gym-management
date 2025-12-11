@@ -1,29 +1,43 @@
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, Moon, Sun } from 'lucide-react';
+import Input from '../components/common/Input';
+import { useTheme } from '../context/ThemeContext';
 
 const Header = () => {
+    const { theme, toggleTheme } = useTheme();
+
     return (
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-10 w-full">
-            <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 w-64 md:w-96">
-                <Search size={18} className="text-gray-400" />
-                <input
-                    type="text"
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 fixed top-0 right-0 left-0 md:left-64 z-20 px-6 flex items-center justify-between transition-colors">
+            <div className="w-96">
+                <Input
                     placeholder="Search..."
-                    className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-600"
+                    icon={Search}
+                    className="bg-gray-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 transition-colors"
                 />
             </div>
 
-            <div className="flex items-center space-x-4">
-                <button className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600">
-                    <Bell size={20} />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            <div className="flex items-center gap-4">
+                <button
+                    onClick={toggleTheme}
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-                <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
-                        A
+                <button className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                    <Bell size={20} />
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                </button>
+
+                <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-slate-700">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">Admin User</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Gym Manager</p>
                     </div>
-                    <div className="hidden md:block">
-                        <p className="text-sm font-medium text-gray-700">Admin User</p>
-                        <p className="text-xs text-gray-500">Super Admin</p>
+                    <div className="w-9 h-9 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <img
+                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                            alt="Admin"
+                            className="w-full h-full object-cover"
+                        />
                     </div>
                 </div>
             </div>

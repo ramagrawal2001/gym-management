@@ -1,8 +1,8 @@
-import clsx from 'clsx';
+import { twMerge } from "tailwind-merge";
 
 const Card = ({ children, className }) => {
     return (
-        <div className={clsx('bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md', className)}>
+        <div className={twMerge("bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm transition-colors", className)}>
             {children}
         </div>
     );

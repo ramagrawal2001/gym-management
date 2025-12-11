@@ -1,46 +1,42 @@
-import { useState } from 'react';
-import { Search, Download, Filter, FileText } from 'lucide-react';
-import Card from '../components/common/Card';
+import { Download, Search, Filter, FileText } from 'lucide-react';
+import Input from '../components/common/Input';
 import Button from '../components/common/Button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/common/Table';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../components/common/Table';
 import Badge from '../components/common/Badge';
-
-const paymentsData = [
-    { id: 'INV-001', member: 'John Doe', date: '2023-10-25', amount: '$50.00', plan: 'Basic Yoga', method: 'Credit Card', status: 'Paid' },
-    { id: 'INV-002', member: 'Mike Johnson', date: '2023-10-24', amount: '$400.00', plan: 'Elite Performance', method: 'Bank Transfer', status: 'Paid' },
-    { id: 'INV-003', member: 'Sarah Wilson', date: '2023-10-22', amount: '$200.00', plan: 'Zumba - 6 Months', method: 'Cash', status: 'Pending' },
-];
 
 const Payments = () => {
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Payments & Invoices</h1>
-                    <p className="text-gray-500 text-sm mt-1">Track revenue and transactions</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payments</h1>
+                    <p className="text-gray-500 dark:text-gray-400">View transaction history and invoices.</p>
                 </div>
-                <Button>
-                    <Download size={20} className="mr-2" />
-                    Download Report
-                </Button>
+                <div className="flex gap-3">
+                    <Button variant="secondary">
+                        <FileText size={18} className="mr-2" />
+                        Reports
+                    </Button>
+                    <Button>
+                        <Download size={18} className="mr-2" />
+                        Export
+                    </Button>
+                </div>
             </div>
 
-            <Card>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search invoice or member..."
-                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row gap-4 justify-between">
+                    <div className="w-full sm:w-96">
+                        <Input
+                            placeholder="Search invoices..."
+                            icon={Search}
+                            className="dark:bg-slate-900 dark:border-slate-700"
                         />
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <Button variant="secondary" className="!px-3">
-                            <Filter size={20} className="mr-2" />
-                            Filter
-                        </Button>
-                    </div>
+                    <Button variant="secondary" className="sm:w-auto">
+                        <Filter size={16} className="mr-2" />
+                        Filter
+                    </Button>
                 </div>
 
                 <Table>
@@ -56,28 +52,30 @@ const Payments = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paymentsData.map((payment) => (
-                            <TableRow key={payment.id}>
-                                <TableCell className="font-mono text-sm text-gray-500">{payment.id}</TableCell>
-                                <TableCell className="font-medium text-gray-900">{payment.member}</TableCell>
-                                <TableCell>{payment.date}</TableCell>
+                        {[1, 2, 3, 4, 5, 6].map((item) => (
+                            <TableRow key={item}>
+                                <TableCell className="font-mono text-gray-500 dark:text-gray-400">#INV-2024-00{item}</TableCell>
                                 <TableCell>
-                                    <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-600">{payment.plan}</span>
+                                    <div className="font-medium text-gray-900 dark:text-white">John Doe</div>
                                 </TableCell>
-                                <TableCell className="font-bold text-gray-900">{payment.amount}</TableCell>
+                                <TableCell>Oct 24, 2024</TableCell>
+                                <TableCell>Gold Monthly</TableCell>
+                                <TableCell className="font-medium">$99.00</TableCell>
                                 <TableCell>
-                                    <Badge variant={payment.status === 'Paid' ? 'success' : 'warning'}>{payment.status}</Badge>
+                                    <Badge variant={item % 3 === 0 ? 'warning' : 'success'}>
+                                        {item % 3 === 0 ? 'Pending' : 'Paid'}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <button className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors" title="Download Invoice">
-                                        <FileText size={18} />
-                                    </button>
+                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                        Download
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
-            </Card>
+            </div>
         </div>
     );
 };

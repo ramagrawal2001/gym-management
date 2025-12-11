@@ -1,114 +1,135 @@
-import { ArrowLeft, Edit, Mail, Phone, Calendar, Clock, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/common/Button';
+import { useParams } from 'react-router-dom';
+import { Mail, Phone, MapPin, Calendar, Activity, CreditCard, Utensils, Dumbbell } from 'lucide-react';
 import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import { clsx } from "clsx";
+import { useState } from 'react';
 
 const MemberProfile = () => {
-    const navigate = useNavigate();
+    const { id } = useParams();
+    const [activeTab, setActiveTab] = useState('activity');
+
+    const tabs = [
+        { id: 'activity', label: 'Activity Log', icon: Activity },
+        { id: 'payments', label: 'Payment History', icon: CreditCard },
+        { id: 'diet', label: 'Diet Plan', icon: Utensils },
+        { id: 'workout', label: 'Workout Plan', icon: Dumbbell },
+    ];
 
     return (
         <div className="space-y-6">
-            <Button variant="ghost" onClick={() => navigate(-1)} className="!pl-0">
-                <ArrowLeft size={20} className="mr-2" />
-                Back to Members
-            </Button>
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Profile Card */}
+                {/* Profile Sidebar */}
                 <div className="lg:col-span-1 space-y-6">
-                    <Card className="flex flex-col items-center text-center p-8">
-                        <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mb-4">
-                            J
+                    <Card className="p-6 text-center">
+                        <div className="w-24 h-24 mx-auto bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
+                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`} alt="Profile" className="w-full h-full object-cover" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900">John Doe</h2>
-                        <p className="text-gray-500">Member ID: #MEM001</p>
-                        <Badge variant="success" className="mt-2 px-3 py-1">Active</Badge>
-
-                        <div className="w-full mt-6 space-y-4 pt-6 border-t border-gray-100 text-left">
-                            <div className="flex items-center text-gray-600">
-                                <Mail size={18} className="mr-3 text-gray-400" />
-                                <span className="text-sm">john@example.com</span>
-                            </div>
-                            <div className="flex items-center text-gray-600">
-                                <Phone size={18} className="mr-3 text-gray-400" />
-                                <span className="text-sm">+1 234 567 890</span>
-                            </div>
-                            <div className="flex items-center text-gray-600">
-                                <Calendar size={18} className="mr-3 text-gray-400" />
-                                <span className="text-sm">Joined: Oct 15, 2023</span>
-                            </div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Jane Cooper</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Member since Jan 2024</p>
+                        <div className="mt-4 flex justify-center">
+                            <Badge variant="success" className="px-3 py-1">Active Member</Badge>
                         </div>
 
-                        <Button variant="secondary" className="w-full mt-6">
-                            <Edit size={16} className="mr-2" />
-                            Edit Profile
-                        </Button>
+                        <div className="mt-6 space-y-4 text-left">
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                <Mail size={18} />
+                                <span className="text-sm">jane@example.com</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                <Phone size={18} />
+                                <span className="text-sm">+1 (555) 123-4567</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                <MapPin size={18} />
+                                <span className="text-sm">123 Main St, New York</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                <Calendar size={18} />
+                                <span className="text-sm">Born Mar 15, 1995</span>
+                            </div>
+                        </div>
                     </Card>
 
-                    <Card>
-                        <h3 className="font-bold text-gray-900 mb-4">Current Plan</h3>
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 mb-4">
-                            <div className="font-semibold text-blue-900">Yoga Premium</div>
-                            <div className="text-blue-600 text-sm mt-1">Ends Jan 15, 2024</div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Progress</span>
-                                <span className="text-gray-900 font-medium">65 days left</span>
+                    <Card className="p-6">
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Current Plan</h3>
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 className="font-bold text-blue-900 dark:text-blue-300">Gold Membership</h4>
+                                    <p className="text-xs text-blue-700 dark:text-blue-400">$99 / month</p>
+                                </div>
+                                <Badge variant="primary">Yearly</Badge>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div className="w-full bg-blue-200 dark:bg-blue-900/30 rounded-full h-2 mt-3">
                                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
                             </div>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 text-right">165 days remaining</p>
                         </div>
-                        <Button variant="primary" className="w-full mt-4">Renew Membership</Button>
                     </Card>
                 </div>
 
-                {/* Right Column: Tabs (History, Diet, Stats, etc.) */}
+                {/* Main Content */}
                 <div className="lg:col-span-2">
-                    <Card className="min-h-[500px]">
-                        <div className="border-b border-gray-100">
-                            <nav className="-mb-px flex space-x-6 px-6 overflow-x-auto">
-                                {['Activity', 'Payment History', 'Diet Plan', 'Workout Plan'].map((tab) => (
-                                    <button
-                                        key={tab}
-                                        className="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-blue-600 text-blue-600"
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                        <div className="p-6">
-                            {/* Placeholder Content for Tabs */}
-                            <div className="text-center py-12">
-                                <h4 className="text-gray-900 font-medium mb-2">Member Activity Log</h4>
-                                <p className="text-gray-500 text-sm mb-6">Recent check-ins and gym usage.</p>
-
-                                <div className="space-y-4 text-left">
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center">
-                                            <Clock size={20} className="text-gray-400 mr-3" />
-                                            <div>
-                                                <div className="font-medium text-gray-900">Check-in at Gym Floor</div>
-                                                <div className="text-xs text-gray-500">Today, 09:30 AM</div>
-                                            </div>
-                                        </div>
-                                        <Badge variant="gray">Confirmed</Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center">
-                                            <Clock size={20} className="text-gray-400 mr-3" />
-                                            <div>
-                                                <div className="font-medium text-gray-900">Check-out</div>
-                                                <div className="text-xs text-gray-500">Yesterday, 06:45 PM</div>
-                                            </div>
-                                        </div>
-                                        <Badge variant="gray">Confirmed</Badge>
-                                    </div>
-                                </div>
+                    <Card className="min-h-[600px]">
+                        <div className="border-b border-gray-200 dark:border-slate-700">
+                            <div className="flex overflow-x-auto">
+                                {tabs.map((tab) => {
+                                    const Icon = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={clsx(
+                                                "flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
+                                                isActive
+                                                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                                                    : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:border-gray-300"
+                                            )}
+                                        >
+                                            <Icon size={18} />
+                                            {tab.label}
+                                        </button>
+                                    )
+                                })}
                             </div>
+                        </div>
+
+                        <div className="p-6">
+                            {activeTab === 'activity' && (
+                                <div className="space-y-4">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
+                                                    <Activity size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-900 dark:text-white">Check-in at Gym</p>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">Main Entrance</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">Today, 9:30 AM</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {activeTab === 'diet' && (
+                                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                    <Utensils size={48} className="mx-auto mb-4 opacity-50" />
+                                    <p>No diet plan assigned yet.</p>
+                                    <Button className="mt-4" variant="secondary">Create Diet Plan</Button>
+                                </div>
+                            )}
+                            {activeTab === 'workout' && (
+                                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                    <Dumbbell size={48} className="mx-auto mb-4 opacity-50" />
+                                    <p>No workout routine assigned yet.</p>
+                                    <Button className="mt-4" variant="secondary">Create Workout</Button>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>
