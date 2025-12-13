@@ -1,15 +1,48 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import { Lock, Mail } from 'lucide-react';
+import { login } from '../store/slices/authSlice';
+import { useNotification } from '../hooks/useNotification';
 
 const Login = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { error: showError } = useNotification();
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = (e) => {
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+        setError('');
+    };
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Mock login logic
-        navigate('/');
+        setError('');
+        setIsLoading(true);
+
+        try {
+            const result = await dispatch(login(formData)).unwrap();
+            if (result) {
+                navigate('/');
+            }
+        } catch (err) {
+            const errorMessage = err || 'Login failed. Please check your credentials.';
+            setError(errorMessage);
+            showError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -23,18 +56,29 @@ const Login = () => {
                     <p className="text-gray-500 dark:text-gray-400 mt-2">Sign in to manage your gym</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-6">
+                    {error && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                            {error}
+                        </div>
+                    )}
                     <Input
                         label="Email Address"
+                        name="email"
                         type="email"
                         placeholder="admin@gympro.com"
                         icon={Mail}
+                        value={formData.email}
+                        onChange={handleChange}
                         required
                     />
                     <Input
                         label="Password"
+                        name="password"
                         type="password"
                         placeholder="••••••••"
                         icon={Lock}
+                        value={formData.password}
+                        onChange={handleChange}
                         required
                     />
                     <div className="flex items-center justify-between">
@@ -44,7 +88,13 @@ const Login = () => {
                         </label>
                         <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">Forgot Password?</a>
                     </div>
-                    <Button variant="primary" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+                    <Button 
+                        variant="primary" 
+                        size="lg" 
+                        className="w-full shadow-lg shadow-blue-500/30"
+                        isLoading={isLoading}
+                        disabled={isLoading}
+                    >
                         Sign In
                     </Button>
                 </form>

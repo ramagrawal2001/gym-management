@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
@@ -7,25 +7,55 @@ import {
     Dumbbell,
     Package,
     Settings,
-    LogOut
+    LogOut,
+    Building2
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useRole } from '../hooks/useRole';
+import { useFeature } from '../hooks/useFeature';
+import { useAuth } from '../hooks/useAuth';
 
 const Sidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { hasRole, isSuperAdmin } = useRole();
+    const { hasFeature } = useFeature();
+    const { logout, user } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-        { icon: Users, label: 'Leads CRM', path: '/crm' },
-        { icon: CalendarCheck, label: 'Schedule', path: '/schedule' },
-        { icon: Users, label: 'Members', path: '/members' },
-        { icon: CreditCard, label: 'Plans', path: '/plans' },
-        { icon: CreditCard, label: 'Payments', path: '/payments' },
-        { icon: CalendarCheck, label: 'Attendance', path: '/attendance' },
-        { icon: Dumbbell, label: 'Trainers', path: '/trainers' },
-        { icon: Package, label: 'Inventory', path: '/inventory' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: Building2, label: 'Gyms', path: '/gyms', roles: ['super_admin'] },
+        { icon: Users, label: 'Leads CRM', path: '/crm', feature: 'crm', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: CalendarCheck, label: 'Schedule', path: '/schedule', feature: 'scheduling', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: Users, label: 'Members', path: '/members', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: CreditCard, label: 'Plans', path: '/plans', roles: ['super_admin', 'owner'] },
+        { icon: CreditCard, label: 'Payments', path: '/payments', feature: 'payments', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: CalendarCheck, label: 'Attendance', path: '/attendance', feature: 'attendance', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: Dumbbell, label: 'Trainers', path: '/trainers', feature: 'staff', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: Package, label: 'Inventory', path: '/inventory', feature: 'inventory', roles: ['super_admin', 'owner', 'staff'] },
+        { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'] },
     ];
+
+    const filteredMenuItems = menuItems.filter(item => {
+        // If user is not loaded yet, show all items (will be filtered once user loads)
+        if (!user) return true;
+        
+        // Super admin sees everything
+        if (isSuperAdmin()) return true;
+        
+        // Check role
+        if (item.roles && !hasRole(item.roles)) return false;
+        
+        // Check feature (for non-super-admin users)
+        if (item.feature && !hasFeature(item.feature)) return false;
+        
+        return true;
+    });
 
     return (
         <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 h-screen fixed left-0 top-0 hidden md:flex flex-col transition-colors z-30">
@@ -39,7 +69,7 @@ const Sidebar = () => {
             </div>
 
             <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-                {menuItems.map((item) => {
+                {filteredMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
                     return (
@@ -61,7 +91,10 @@ const Sidebar = () => {
             </nav>
 
             <div className="p-4 border-t border-gray-200 dark:border-slate-800">
-                <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                >
                     <LogOut size={20} />
                     Logout
                 </button>

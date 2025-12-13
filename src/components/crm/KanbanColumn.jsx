@@ -29,7 +29,7 @@ const KanbanColumn = ({ id, title, leads, color }) => {
             </h3>
             <div ref={setNodeRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {leads.map((lead) => (
-                    <LeadCard key={lead.id} lead={lead} />
+                    <LeadCard key={lead._id || lead.id} lead={lead} />
                 ))}
                 {leads.length === 0 && (
                     <div className="h-24 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg flex items-center justify-center text-gray-400 text-sm">

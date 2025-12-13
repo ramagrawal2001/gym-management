@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
 
-const Input = forwardRef(({ label, error, icon: Icon, className, ...props }, ref) => {
+const Input = forwardRef(({ label, error, icon: Icon, className, helperText, disabled, ...props }, ref) => {
     return (
         <div className="w-full">
             {label && (
@@ -18,19 +18,22 @@ const Input = forwardRef(({ label, error, icon: Icon, className, ...props }, ref
                 )}
                 <input
                     ref={ref}
+                    disabled={disabled}
                     className={twMerge(
                         clsx(
                             "block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors",
                             "dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:placeholder-gray-400",
                             Icon && "pl-10",
                             error && "border-red-500 focus:border-red-500 focus:ring-red-500",
+                            disabled && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900",
                             className
                         )
                     )}
                     {...props}
                 />
             </div>
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {helperText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>}
         </div>
     );
 });

@@ -1,118 +1,292 @@
-# GymPro - The Ultimate Gym Management Solution
+# GymOS - Complete Gym Management System
 
-**GymPro** is a state-of-the-art, premium web application designed to revolutionize how fitness centers operate. Built with a focus on aesthetics, speed, and usability, it provides gym owners and staff with a powerful command center to manage members, finances, and day-to-day operations.
+A full-stack SaaS application for managing gym operations, built with React 19, Node.js, Express, and MongoDB.
 
-![GymPro Dashboard](https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop)
-> *A modern, dark-mode capability dashboard for the fitness industry.*
+## Architecture
 
----
+```
+Frontend (React 19 + Vite + TailwindCSS)
+├── Redux store for state management
+├── Protected routes with role-based access
+├── Feature-based conditional rendering
+└── API service layer (axios)
 
-## 🌟 Why GymPro?
-
-*   **Premium Aesthetic:** Escaping the boring "spreadsheet" look of traditional software. GymPro uses modern glassmorphism, smooth transitions, and a refined color palette.
-*   **Speed First:** Built on Vite + React 19, pages load instantly.
-*   **Dark Mode Native:** Designed from the ground up to look stunning in both Light and Dark modes.
-
----
-
-## 🚀 Comprehensive Feature Suite
-
-### 1. 📊 Interactive Dashboard
-A centralized command center giving you immediate visibility into your gym's health.
-*   **Live Metrics:** Real-time counters for Total Members, Monthly Revenue, New Joinings, and Members Expiring Soon.
-*   **Revenue Analytics:** Interactive Area Chart distinguishing income trends over the last 12 months.
-*   **Retention Tracking:** [Coming Soon] Visualizations for churn rate and retention analysis.
-*   **Recent Registrations:** Quick-access table showing the latest member sign-ups and their payment status.
-
-### 2. 👥 Advanced Member Management
-Detailed operational tools to manage your community.
-*   **Smart Member List:** Searchable, sortable, and filterable table. Filter by Plan (Gold/Silver) or Status (Active/Expired).
-*   **360° Member Profile:**
-    *   **Personal Info:** Contact details, emergency contacts, and joining dates.
-    *   **Subscription Logic:** visual progress bar showing days remaining in current membership.
-    *   **Activity Log:** Historical record of every check-in.
-    *   **Diet & Workout Plans:** Tabs to view and assign personalized fitness routines.
-*   **Quick Actions:** One-click renewal, profile editing, or member deletion.
-
-### 3. 🎯 Leads CRM (Customer Relationship Management)
-Convert more prospects with a dedicated sales pipeline.
-*   **Kanban Board Interface:** Drag-and-drop leads between stages: **New** → **Contacted** → **Trial Started** → **Negotiation** → **Converted**.
-*   **Lead Source Tracking:** Identify if leads came from Instagram, Walk-ins, Website, or Referrals.
-*   **Interaction History:** [Planned] Log calls and notes for each potential member.
-
-### 4. 📅 Class Scheduling & Booking
-Manage your group fitness ecosystem.
-*   **Weekly Calendar View:** A familiar Google-Calendar-style interface to visualize the week's schedule.
-*   **Class Types:** Support for various formats like Yoga, HIIT, Zumba, Pilates, and CrossFit.
-*   **Instructor Management:** Assign specific trainers to classes.
-*   **Capacity Indicators:** Visual cues for how full a class is (e.g., "12/20 booked").
-
-### 5. 💰 Finance & Point of Sale
-*   **Invoicing System:** Generate professional invoices for membership renewals.
-*   **Payment Tracking:** Monitor Paid vs Pending transactions with color-coded badges.
-*   **Membership Plans:** Configurable tier system (e.g., "Gold Yearly", "Silver Monthly") with feature lists and pricing.
-
-### 6. 🛠 Operations & Facility
-*   **Smart Attendance:**
-    *   **Check-in Kiosk:** A dedicated simplified view for scanning member cards or entering IDs.
-    *   **Live Occupancy:** Real-time "Currently In" counter to monitor gym crowding.
-*   **Staff & Trainers:** Profile cards for all employees, tracking their specializations and client load.
-*   **Inventory Manager:** Track equipment health.
-    *   **Status Alerts:** Auto-flag items marked as "Repairs Needed" or "Maintenance Due".
-    *   **Asset Tracking:** Purchase dates, warranty info, and categorization (Cardio/Strength).
-
-### 7. ⚙️ System Configuration
-*   **Theme Engine:** Global toggle for Light/Dark mode with persistence.
-*   **Global Search:** Header-based global search to find members or pages instantly.
-*   **Notifications:** Alert system for expiring memberships or pending tasks.
-
----
-
-## � Technical Architecture
-
-*   **Frontend Framework:** React 19
-*   **Build Tool:** Vite (Ultra-fast HMR)
-*   **Styling Engine:** Tailwind CSS v4
-*   **State Management:** React Context API (Theme) + Local State
-*   **Routing:** React Router v6 (Nested Routes)
-*   **Drag & Drop:** `@dnd-kit/core` (Accessible, lightweight drag and drop)
-*   **Data Visualization:** Recharts (Composable React charts)
-*   **Icons:** Lucide React (Consistency and small bundle size)
-*   **Date Management:** date-fns
-
----
-
-## 📂 Project Structure
-
-```bash
-jymManagement/
-├── src/
-│   ├── components/
-│   │   ├── common/         # Atomic UI (Button, Card, Input, Modal)
-│   │   ├── crm/            # Kanban Board components
-│   │   ├── dashboard/      # Charts and Stat Cards
-│   │   ├── members/        # Forms and Tables
-│   │   └── scheduling/     # Calendar components
-│   ├── context/            # React Context (ThemeContext)
-│   ├── layouts/            # App Shell (Sidebar, Header)
-│   ├── pages/              # Route Components (Dashboard, Members, CRM...)
-│   ├── App.jsx             # Main Router Configuration
-│   └── index.css           # Tailwind v4 Imports & Base Styles
-├── public/                 # Static Assets
-└── package.json            # Dependencies
+Backend (Node.js + Express + MongoDB)
+├── Multi-tenant architecture (gymId scoping)
+├── JWT authentication
+├── RBAC (Super Admin, Owner, Staff, Member)
+├── Feature toggles per gym
+└── RESTful API at /api/v1
 ```
 
----
+## Features
 
-## 🔮 Future Roadmap
+- **Dashboard** - Analytics and overview
+- **Members Management** - CRUD operations, subscriptions, renewals
+- **CRM (Leads)** - Kanban board for lead management
+- **Class Scheduling** - Weekly calendar, booking system
+- **Attendance System** - Check-in/out, live tracking
+- **Finance/Invoices** - Invoice generation, payment tracking
+- **Staff Management** - Trainer and staff CRUD
+- **Inventory** - Equipment tracking and maintenance
+- **Settings** - Theme, branding, feature toggles
+- **Role-based Access Control** - Multi-level permissions
+- **Feature Toggles** - Enable/disable features per gym
+- **White-label Branding** - Custom logos and colors
 
-We are actively working on:
-1.  **Member Portal PWA:** A mobile app for members to book classes and view workouts.
-2.  **Gamification:** Leaderboards for "Most Consistent Member" to boost engagement.
-3.  **Expense Tracker:** A debit/credit ledger to calculate Net Profit directly in the dashboard.
-4.  **Hardware Integration:** API webhooks for biometric turnstiles.
-5.  **Multi-branch Support:** Managing multiple gym locations from a Super Admin view.
+## Tech Stack
 
----
+### Frontend
+- React 19
+- Vite
+- TailwindCSS
+- Redux Toolkit
+- React Router 6
+- Recharts
+- dnd-kit
+- Axios
 
-Developed with ❤️ by **Ram Agrawal**
+### Backend
+- Node.js
+- Express
+- MongoDB + Mongoose
+- JWT
+- bcryptjs
+- Multer (file uploads)
+- Cloudinary (optional)
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- npm or yarn
+
+### Backend Setup
+
+1. Navigate to server directory:
+```bash
+cd server
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create `.env` file (copy from `.env.example`):
+```bash
+cp .env.example .env
+```
+
+4. Update `.env` with your configuration:
+```env
+PORT=3001
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/gymos
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRE=7d
+SUPER_ADMIN_EMAIL=admin@gymos.com
+SUPER_ADMIN_PASSWORD=Admin@123
+```
+
+5. Seed super admin (optional):
+```bash
+npm run seed
+```
+
+6. Start the server:
+```bash
+npm run dev
+```
+
+The backend will run on `http://localhost:3001`
+
+### Frontend Setup
+
+1. Navigate to project root:
+```bash
+cd ..
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create `.env` file:
+```bash
+cp .env.example .env
+```
+
+4. Update `.env`:
+```env
+VITE_API_URL=http://localhost:3001/api/v1
+```
+
+5. Start the development server:
+```bash
+npm run dev
+```
+
+The frontend will run on `http://localhost:5173`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/v1/auth/login` - Login
+- `POST /api/v1/auth/register` - Register
+- `GET /api/v1/auth/me` - Get current user
+- `PUT /api/v1/auth/profile` - Update profile
+- `PUT /api/v1/auth/change-password` - Change password
+
+### Gyms (Super Admin only)
+- `GET /api/v1/gyms` - List all gyms
+- `GET /api/v1/gyms/:id` - Get gym
+- `POST /api/v1/gyms` - Create gym
+- `PUT /api/v1/gyms/:id` - Update gym
+- `PUT /api/v1/gyms/:id/features` - Update features
+- `PUT /api/v1/gyms/:id/branding` - Update branding
+
+### Members
+- `GET /api/v1/members` - List members
+- `GET /api/v1/members/:id` - Get member
+- `POST /api/v1/members` - Create member
+- `PUT /api/v1/members/:id` - Update member
+- `PUT /api/v1/members/:id/renew` - Renew subscription
+- `DELETE /api/v1/members/:id` - Delete member
+
+### Leads (CRM)
+- `GET /api/v1/leads` - List leads
+- `GET /api/v1/leads/:id` - Get lead
+- `POST /api/v1/leads` - Create lead
+- `PUT /api/v1/leads/:id` - Update lead
+- `PUT /api/v1/leads/:id/status` - Update status
+- `DELETE /api/v1/leads/:id` - Delete lead
+
+### Classes
+- `GET /api/v1/classes` - List classes
+- `GET /api/v1/classes/:id` - Get class
+- `POST /api/v1/classes` - Create class
+- `PUT /api/v1/classes/:id` - Update class
+- `POST /api/v1/classes/:id/book` - Book class
+- `DELETE /api/v1/classes/:id/book/:bookingId` - Cancel booking
+- `DELETE /api/v1/classes/:id` - Delete class
+
+### Attendance
+- `GET /api/v1/attendance` - List attendance
+- `GET /api/v1/attendance/today` - Today's attendance
+- `POST /api/v1/attendance/checkin` - Check in
+- `PUT /api/v1/attendance/checkout/:id` - Check out
+- `GET /api/v1/attendance/member/:memberId` - Member attendance
+
+### Invoices
+- `GET /api/v1/invoices` - List invoices
+- `GET /api/v1/invoices/:id` - Get invoice
+- `POST /api/v1/invoices` - Create invoice
+- `PUT /api/v1/invoices/:id` - Update invoice
+- `PUT /api/v1/invoices/:id/paid` - Mark as paid
+- `DELETE /api/v1/invoices/:id` - Delete invoice
+
+### Payments
+- `GET /api/v1/payments` - List payments
+- `GET /api/v1/payments/:id` - Get payment
+- `POST /api/v1/payments` - Create payment
+- `PUT /api/v1/payments/:id` - Update payment
+- `DELETE /api/v1/payments/:id` - Delete payment
+
+### Staff
+- `GET /api/v1/staff` - List staff
+- `GET /api/v1/staff/:id` - Get staff member
+- `POST /api/v1/staff` - Create staff
+- `PUT /api/v1/staff/:id` - Update staff
+- `DELETE /api/v1/staff/:id` - Delete staff
+
+### Equipment
+- `GET /api/v1/equipment` - List equipment
+- `GET /api/v1/equipment/:id` - Get equipment
+- `POST /api/v1/equipment` - Create equipment
+- `PUT /api/v1/equipment/:id` - Update equipment
+- `PUT /api/v1/equipment/:id/service` - Record service
+- `DELETE /api/v1/equipment/:id` - Delete equipment
+
+## User Roles
+
+- **Super Admin** - Full system access, can manage all gyms
+- **Owner** - Full access to their gym
+- **Staff** - Limited access (members, attendance, classes)
+- **Member** - View-only access to their own data
+
+## Feature Toggles
+
+Features can be enabled/disabled per gym:
+- CRM
+- Scheduling
+- Attendance
+- Inventory
+- Staff Management
+- Payments
+- Reports
+
+## Environment Variables
+
+### Backend (.env)
+- `PORT` - Server port (default: 3001)
+- `NODE_ENV` - Environment (development/production)
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - JWT secret key
+- `JWT_EXPIRE` - JWT expiration (default: 7d)
+- `SUPER_ADMIN_EMAIL` - Super admin email
+- `SUPER_ADMIN_PASSWORD` - Super admin password
+- `CLOUDINARY_CLOUD_NAME` - (Optional) Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - (Optional) Cloudinary API key
+- `CLOUDINARY_API_SECRET` - (Optional) Cloudinary API secret
+
+### Frontend (.env)
+- `VITE_API_URL` - Backend API URL (default: http://localhost:3001/api/v1)
+
+## Development
+
+### Backend
+```bash
+cd server
+npm run dev  # Start with watch mode
+npm start    # Start production mode
+npm run seed # Seed super admin
+```
+
+### Frontend
+```bash
+npm run dev    # Start development server
+npm run build  # Build for production
+npm run preview # Preview production build
+```
+
+## Project Structure
+
+```
+jymManagement/
+├── server/                 # Backend
+│   ├── src/
+│   │   ├── models/        # Mongoose models
+│   │   ├── controllers/   # Route controllers
+│   │   ├── routes/        # API routes
+│   │   ├── middleware/    # Auth, RBAC, etc.
+│   │   ├── services/      # Business logic
+│   │   ├── utils/         # Utilities
+│   │   └── app.js         # Express app
+│   └── package.json
+├── src/                   # Frontend
+│   ├── components/         # React components
+│   ├── pages/             # Page components
+│   ├── store/             # Redux store
+│   ├── services/           # API services
+│   ├── hooks/              # Custom hooks
+│   ├── utils/              # Utilities
+│   └── config/             # Configuration
+└── package.json
+```
+
+## License
+
+MIT

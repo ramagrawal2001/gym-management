@@ -2,17 +2,9 @@ import { useState } from 'react';
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
 import KanbanColumn from './KanbanColumn';
 import LeadCard from './LeadCard';
+import { formatDate } from '../../utils/formatDate';
 
-const KanbanBoard = () => {
-    // Mock Data
-    const [leads, setLeads] = useState([
-        { id: '1', name: 'Alice Smith', phone: '555-0101', email: 'alice@test.com', status: 'new', date: 'Oct 24', source: 'Instagram' },
-        { id: '2', name: 'Bob Jones', phone: '555-0102', email: 'bob@test.com', status: 'contacted', date: 'Oct 23', source: 'Walk-in' },
-        { id: '3', name: 'Charlie Day', phone: '555-0103', email: 'charlie@test.com', status: 'trial', date: 'Oct 22', source: 'Referral' },
-        { id: '4', name: 'Dennis Reynolds', phone: '555-0104', email: 'dennis@test.com', status: 'new', date: 'Oct 24', source: 'Website' },
-        { id: '5', name: 'Dee Reynolds', phone: '555-0105', email: 'dee@test.com', status: 'negotiation', date: 'Oct 21', source: 'Instagram' },
-    ]);
-
+const KanbanBoard = ({ leads = [], onStatusChange }) => {
     const [activeId, setActiveId] = useState(null);
 
     const columns = [
@@ -31,27 +23,23 @@ const KanbanBoard = () => {
         setActiveId(event.active.id);
     };
 
-    const handleDragEnd = (event) => {
+    const handleDragEnd = async (event) => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            // Find the lead
             const leadId = active.id;
             const newStatus = over.id;
 
-            setLeads((items) => {
-                return items.map(item => {
-                    if (item.id === leadId) {
-                        return { ...item, status: newStatus };
-                    }
-                    return item;
-                });
-            });
+            // Find the lead
+            const lead = leads.find(l => l._id === leadId || l.id === leadId);
+            if (lead && onStatusChange) {
+                await onStatusChange(leadId, newStatus);
+            }
         }
         setActiveId(null);
     };
 
-    const activeLead = activeId ? leads.find(l => l.id === activeId) : null;
+    const activeLead = activeId ? leads.find(l => (l._id === activeId || l.id === activeId)) : null;
 
     return (
         <DndContext
@@ -65,7 +53,7 @@ const KanbanBoard = () => {
                         key={col.id}
                         id={col.id}
                         title={col.title}
-                        color={col.color === 'purple' ? 'blue' : col.color} // Fallback for purple
+                        color={col.color === 'purple' ? 'blue' : col.color}
                         leads={leads.filter(l => l.status === col.id)}
                     />
                 ))}
