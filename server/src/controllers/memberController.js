@@ -2,6 +2,27 @@ import Member from '../models/Member.js';
 import User from '../models/User.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
 
+// @desc    Get member's own profile
+// @route   GET /api/v1/members/me
+// @access  Private (Member)
+export const getMyProfile = async (req, res) => {
+  try {
+    // Find member record by userId
+    const member = await Member.findOne({ userId: req.user._id })
+      .populate('userId', 'email firstName lastName phone avatar')
+      .populate('planId', 'name price duration features')
+      .populate('gymId', 'name');
+
+    if (!member) {
+      return sendError(res, 404, 'Member profile not found');
+    }
+
+    sendSuccess(res, 'Member profile retrieved successfully', member);
+  } catch (error) {
+    sendError(res, 500, 'Failed to get member profile', error.message);
+  }
+};
+
 // @desc    Get all members
 // @route   GET /api/v1/members
 // @access  Private
@@ -9,9 +30,37 @@ export const getMembers = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
-
-    const query = { gymId };
+    
+    // Members can only see their own data
+    if (req.user.role === 'member') {
+      const member = await Member.findOne({ userId: req.user._id })
+        .populate('userId', 'email firstName lastName phone avatar')
+        .populate('planId', 'name price duration');
+      
+      if (!member) {
+        return sendError(res, 404, 'Member profile not found');
+      }
+      
+      return sendSuccess(res, 'Member retrieved successfully', [member], {
+        pagination: {
+          page: 1,
+          limit: 1,
+          total: 1,
+          pages: 1
+        }
+      });
+    }
+    
+    // Build query - super admin can see all or filter by gymId
+    const query = {};
+    if (req.user.role === 'super_admin') {
+      if (req.query.gymId) {
+        query.gymId = req.query.gymId;
+      }
+      // If no gymId provided, query will be empty and return all members
+    } else {
+      query.gymId = req.user.gymId;
+    }
     
     if (status) {
       query.status = status;
@@ -48,6 +97,7 @@ export const getMembers = async (req, res) => {
     const members = await Member.find(query)
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration')
+      .populate('gymId', 'name')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -81,6 +131,20 @@ export const getMember = async (req, res) => {
       return sendError(res, 404, 'Member not found');
     }
 
+    // Members can only access their own data
+    if (req.user.role === 'member') {
+      if (member.userId._id.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, 'Access denied: Cannot access other members\' data');
+      }
+    }
+
+    // Staff/Owner can only access members from their gym
+    if (req.user.role !== 'super_admin' && req.user.role !== 'member') {
+      if (member.gymId._id.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
+    }
+
     sendSuccess(res, 'Member retrieved successfully', member);
   } catch (error) {
     sendError(res, 500, 'Failed to get member', error.message);
@@ -89,11 +153,16 @@ export const getMember = async (req, res) => {
 
 // @desc    Create member
 // @route   POST /api/v1/members
-// @access  Private (Staff or above)
+// @access  Private (Staff or above, not members)
 export const createMember = async (req, res) => {
   try {
+    // Members cannot create other members
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot create member records');
+    }
+
     const { userId, planId, subscriptionStart, subscriptionEnd, ...otherData } = req.body;
-    const gymId = req.user.gymId;
+    const gymId = req.gymId || req.user.gymId;
 
     const member = await Member.create({
       userId,
@@ -116,21 +185,45 @@ export const createMember = async (req, res) => {
 
 // @desc    Update member
 // @route   PUT /api/v1/members/:id
-// @access  Private (Staff or above)
+// @access  Private (Staff or above, or member updating own profile)
 export const updateMember = async (req, res) => {
   try {
-    const member = await Member.findByIdAndUpdate(req.params.id, req.body, {
+    const member = await Member.findById(req.params.id)
+      .populate('userId', 'email firstName lastName phone avatar');
+
+    if (!member) {
+      return sendError(res, 404, 'Member not found');
+    }
+
+    // Members can only update their own profile (limited fields)
+    if (req.user.role === 'member') {
+      if (member.userId._id.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, 'Access denied: Cannot update other members\' data');
+      }
+      // Members can only update certain fields (via user profile)
+      // Remove restricted fields
+      delete req.body.planId;
+      delete req.body.subscriptionStart;
+      delete req.body.subscriptionEnd;
+      delete req.body.status;
+      delete req.body.gymId;
+    } else {
+      // Staff/Owner can only update members from their gym
+      if (req.user.role !== 'super_admin') {
+        if (member.gymId.toString() !== req.user.gymId.toString()) {
+          return sendError(res, 403, 'Access denied: Invalid gym scope');
+        }
+      }
+    }
+
+    const updated = await Member.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     })
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration');
 
-    if (!member) {
-      return sendError(res, 404, 'Member not found');
-    }
-
-    sendSuccess(res, 'Member updated successfully', member);
+    sendSuccess(res, 'Member updated successfully', updated);
   } catch (error) {
     sendError(res, 500, 'Failed to update member', error.message);
   }
@@ -177,6 +270,13 @@ export const deleteMember = async (req, res) => {
 
     if (!member) {
       return sendError(res, 404, 'Member not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (member.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     await member.deleteOne();

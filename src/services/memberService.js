@@ -31,3 +31,8 @@ export const deleteMember = async (memberId) => {
   return response;
 };
 
+export const getMyProfile = async () => {
+  const response = await api.get(`${API_ENDPOINTS.MEMBERS.BASE}/me`);
+  return response;
+};
+

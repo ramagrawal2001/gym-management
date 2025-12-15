@@ -26,3 +26,8 @@ export const getMemberAttendance = async (memberId, params) => {
   return response;
 };
 
+export const getMyAttendance = async (params) => {
+  const response = await api.get(`${API_ENDPOINTS.ATTENDANCE.BASE}/me`, { params });
+  return response;
+};
+

@@ -3,10 +3,12 @@ import { getEquipment, getEquipmentItem, createEquipment, updateEquipment, recor
 import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
 import { staffOrAbove, ownerOrSuperAdmin } from '../middleware/rbac.js';
+import { checkFeature } from '../middleware/featureGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(checkFeature('inventory'));
 router.use(enforceGymScope);
 
 router.get('/', getEquipment);

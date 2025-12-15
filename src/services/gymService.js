@@ -31,3 +31,28 @@ export const updateGymBranding = async (gymId, branding) => {
   return response;
 };
 
+export const getGymAnalytics = async (gymId) => {
+  const response = await api.get(`${API_ENDPOINTS.GYMS.BASE}/${gymId}/analytics`);
+  return response;
+};
+
+export const getGymMembers = async (gymId, params) => {
+  const response = await api.get(`${API_ENDPOINTS.GYMS.BASE}/${gymId}/members`, { params });
+  return response;
+};
+
+export const getGymStaff = async (gymId, params) => {
+  const response = await api.get(`${API_ENDPOINTS.GYMS.BASE}/${gymId}/staff`, { params });
+  return response;
+};
+
+export const suspendGym = async (gymId, isActive) => {
+  const response = await api.put(`${API_ENDPOINTS.GYMS.BASE}/${gymId}/suspend`, { isActive });
+  return response;
+};
+
+export const deleteGym = async (gymId) => {
+  const response = await api.delete(`${API_ENDPOINTS.GYMS.BASE}/${gymId}`);
+  return response;
+};
+

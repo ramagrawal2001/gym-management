@@ -11,13 +11,16 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import MemberForm from '../components/members/MemberForm';
 import { fetchMembers } from '../store/slices/memberSlice';
 import * as memberService from '../services/memberService';
+import * as gymService from '../services/gymService';
 import { useDebounce } from '../hooks/useDebounce';
 import { useNotification } from '../hooks/useNotification';
+import { useRole } from '../hooks/useRole';
 import { formatDate } from '../utils/formatDate';
 import { MEMBER_STATUSES } from '../utils/constants';
 
 const Members = () => {
     const dispatch = useDispatch();
+    const { isSuperAdmin, isOwner, isStaff } = useRole();
     const { members, pagination, isLoading } = useSelector((state) => state.members);
     const { success: showSuccess, error: showError } = useNotification();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,11 +28,29 @@ const Members = () => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [gymFilter, setGymFilter] = useState('');
+    const [gyms, setGyms] = useState([]);
     const debouncedSearch = useDebounce(searchQuery, 500);
 
     useEffect(() => {
+        if (isSuperAdmin()) {
+            loadGyms();
+        }
+    }, [isSuperAdmin]);
+
+    useEffect(() => {
         loadMembers();
-    }, [debouncedSearch, statusFilter]);
+    }, [debouncedSearch, statusFilter, gymFilter]);
+
+    const loadGyms = async () => {
+        try {
+            const response = await gymService.getGyms({ page: 1, limit: 1000 });
+            const gymsData = response.data?.data || response.data || [];
+            setGyms(Array.isArray(gymsData) ? gymsData : []);
+        } catch (error) {
+            console.error('Failed to load gyms:', error);
+        }
+    };
 
     const loadMembers = async () => {
         try {
@@ -37,7 +58,8 @@ const Members = () => {
                 page: 1,
                 limit: 50,
                 search: debouncedSearch || undefined,
-                status: statusFilter || undefined
+                status: statusFilter || undefined,
+                gymId: gymFilter || undefined
             })).unwrap();
         } catch (error) {
             showError('Failed to load members');
@@ -99,10 +121,12 @@ const Members = () => {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Members</h1>
                     <p className="text-gray-500 dark:text-gray-400">Manage your gym members and their subscriptions.</p>
                 </div>
-                <Button onClick={() => setIsModalOpen(true)}>
-                    <Plus size={20} className="mr-2" />
-                    Add Member
-                </Button>
+                {!isStaff() && (
+                    <Button onClick={() => setIsModalOpen(true)}>
+                        <Plus size={20} className="mr-2" />
+                        Add Member
+                    </Button>
+                )}
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -116,24 +140,41 @@ const Members = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="rounded-lg border border-gray-300 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2 px-3 text-sm"
-                    >
-                        <option value="">All Status</option>
-                        {Object.values(MEMBER_STATUSES).map(status => (
-                            <option key={status} value={status}>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="flex gap-2">
+                        {isSuperAdmin() && (
+                            <select
+                                value={gymFilter}
+                                onChange={(e) => setGymFilter(e.target.value)}
+                                className="rounded-lg border border-gray-300 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2 px-3 text-sm"
+                            >
+                                <option value="">All Gyms</option>
+                                {gyms.map(gym => (
+                                    <option key={gym._id} value={gym._id}>
+                                        {gym.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="rounded-lg border border-gray-300 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2 px-3 text-sm"
+                        >
+                            <option value="">All Status</option>
+                            {Object.values(MEMBER_STATUSES).map(status => (
+                                <option key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Member</TableHead>
+                            {isSuperAdmin() && <TableHead>Gym</TableHead>}
                             <TableHead>Contact</TableHead>
                             <TableHead>Plan</TableHead>
                             <TableHead>Join Date</TableHead>
@@ -144,13 +185,13 @@ const Members = () => {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8">
+                                <TableCell colSpan={isSuperAdmin() ? 7 : 6} className="text-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                                 </TableCell>
                             </TableRow>
                         ) : members.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <TableCell colSpan={isSuperAdmin() ? 7 : 6} className="text-center text-gray-500 dark:text-gray-400 py-8">
                                     No members found
                                 </TableCell>
                             </TableRow>
@@ -158,6 +199,7 @@ const Members = () => {
                             members.map((member) => {
                                 const user = member.userId;
                                 const plan = member.planId;
+                                const gym = member.gymId || (user?.gymId ? { name: user.gymId.name || 'N/A' } : null);
                                 return (
                                     <TableRow key={member._id}>
                                         <TableCell>
@@ -183,6 +225,13 @@ const Members = () => {
                                                 </div>
                                             </div>
                                         </TableCell>
+                                        {isSuperAdmin() && (
+                                            <TableCell>
+                                                <div className="text-gray-900 dark:text-gray-200">
+                                                    {gym?.name || 'N/A'}
+                                                </div>
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <div className="text-gray-900 dark:text-gray-200">{user?.email || 'N/A'}</div>
                                             <div className="text-xs text-gray-500 dark:text-gray-400">{user?.phone || '-'}</div>
@@ -199,18 +248,22 @@ const Members = () => {
                                                 <Link to={`/members/${member._id}`} className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                                     <Eye size={18} />
                                                 </Link>
-                                                <button 
-                                                    onClick={() => handleEdit(member)}
-                                                    className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                                                >
-                                                    <Edit size={18} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(member)}
-                                                    className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                >
-                                                    <Trash size={18} />
-                                                </button>
+                                                {!isStaff() && (
+                                                    <button 
+                                                        onClick={() => handleEdit(member)}
+                                                        className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                                    >
+                                                        <Edit size={18} />
+                                                    </button>
+                                                )}
+                                                {(isSuperAdmin() || isOwner()) && (
+                                                    <button 
+                                                        onClick={() => handleDelete(member)}
+                                                        className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                    >
+                                                        <Trash size={18} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
-import { Lock, Mail, User } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
 import { register } from '../store/slices/authSlice';
 import { useNotification } from '../hooks/useNotification';
 
@@ -13,7 +13,6 @@ const Register = () => {
     const { error: showError, success: showSuccess } = useNotification();
     const [formData, setFormData] = useState({
         email: '',
-        password: '',
         firstName: '',
         lastName: '',
         phone: '',
@@ -100,17 +99,9 @@ const Register = () => {
                         value={formData.phone}
                         onChange={handleChange}
                     />
-                    <Input
-                        label="Password"
-                        name="password"
-                        type="password"
-                        placeholder="••••••••"
-                        icon={Lock}
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                        minLength={6}
-                    />
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-lg text-sm">
+                        <p>After registration, you'll use OTP-based login with your email address.</p>
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Role

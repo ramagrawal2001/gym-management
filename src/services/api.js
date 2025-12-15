@@ -14,7 +14,9 @@ const api = axios.create({
 // Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Get token from Redux store
+    const state = store.getState();
+    const token = state.auth?.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

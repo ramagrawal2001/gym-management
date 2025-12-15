@@ -68,7 +68,7 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
                 try {
                     const userResponse = await authService.register({
                         email: formData.email,
-                        password: 'TempPassword123!', // Temporary password, should be changed
+                        // Password not needed - backend generates random password (OTP login is used)
                         firstName: formData.firstName,
                         lastName: formData.lastName,
                         phone: formData.phone,

@@ -134,11 +134,12 @@ The frontend will run on `http://localhost:5173`
 ## API Endpoints
 
 ### Authentication
-- `POST /api/v1/auth/login` - Login
-- `POST /api/v1/auth/register` - Register
+- `POST /api/v1/auth/request-otp` - Request OTP for login (All users)
+- `POST /api/v1/auth/verify-otp` - Verify OTP and login (All users)
+- `POST /api/v1/auth/register` - Register new user (no password required)
 - `GET /api/v1/auth/me` - Get current user
 - `PUT /api/v1/auth/profile` - Update profile
-- `PUT /api/v1/auth/change-password` - Change password
+- **Note:** Password-based login has been removed. All users must use OTP login.
 
 ### Gyms (Super Admin only)
 - `GET /api/v1/gyms` - List all gyms
@@ -212,10 +213,18 @@ The frontend will run on `http://localhost:5173`
 
 ## User Roles
 
-- **Super Admin** - Full system access, can manage all gyms
-- **Owner** - Full access to their gym
-- **Staff** - Limited access (members, attendance, classes)
-- **Member** - View-only access to their own data
+- **Super Admin** - Full system access, can manage all gyms (OTP login only)
+- **Owner** - Full access to their gym (OTP login only)
+- **Staff** - Limited access (members, attendance, classes) (OTP login only)
+- **Member** - View-only access to their own data (OTP login only)
+
+## Login Methods
+
+- **OTP Login (All Users)**: 
+  - Enter email → Receive OTP via email → Enter OTP to login
+  - OTP expires in 10 minutes
+  - Maximum 5 verification attempts per OTP
+  - All users must use OTP login (password-based login has been removed)
 
 ## Feature Toggles
 
@@ -237,7 +246,12 @@ Features can be enabled/disabled per gym:
 - `JWT_SECRET` - JWT secret key
 - `JWT_EXPIRE` - JWT expiration (default: 7d)
 - `SUPER_ADMIN_EMAIL` - Super admin email
-- `SUPER_ADMIN_PASSWORD` - Super admin password
+- `SUPER_ADMIN_PASSWORD` - Super admin password (not used for login - OTP only)
+- `SMTP_HOST` - SMTP server host (default: smtp.gmail.com)
+- `SMTP_PORT` - SMTP server port (default: 587)
+- `SMTP_USER` or `EMAIL_USER` - SMTP username/email
+- `SMTP_PASS` or `EMAIL_PASSWORD` - SMTP password
+- `EMAIL_FROM` - Email sender address (default: noreply@gymos.com)
 - `CLOUDINARY_CLOUD_NAME` - (Optional) Cloudinary cloud name
 - `CLOUDINARY_API_KEY` - (Optional) Cloudinary API key
 - `CLOUDINARY_API_SECRET` - (Optional) Cloudinary API secret

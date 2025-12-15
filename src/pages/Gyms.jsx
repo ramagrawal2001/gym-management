@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash, Eye, Building2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash, Eye, Building2, Power, PowerOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -157,6 +158,7 @@ const GymForm = ({ gym = null, onSubmit, onCancel }) => {
 
 const Gyms = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { success: showSuccess, error: showError } = useNotification();
     const [gyms, setGyms] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -229,13 +231,23 @@ const Gyms = () => {
     const handleDeleteConfirm = async () => {
         if (!selectedGym) return;
         try {
-            // Note: Delete endpoint might not exist, you may need to add it
-            // For now, we'll just show an error
-            showError('Delete functionality not implemented yet');
+            await gymService.deleteGym(selectedGym._id);
+            showSuccess('Gym deleted successfully');
             setIsDeleteModalOpen(false);
             setSelectedGym(null);
+            loadGyms();
         } catch (error) {
             showError(error.response?.data?.message || 'Failed to delete gym');
+        }
+    };
+
+    const handleSuspend = async (gym) => {
+        try {
+            await gymService.suspendGym(gym._id, !gym.isActive);
+            showSuccess(`Gym ${gym.isActive ? 'suspended' : 'activated'} successfully`);
+            loadGyms();
+        } catch (error) {
+            showError(error.response?.data?.message || 'Failed to update gym status');
         }
     };
 
@@ -329,11 +341,25 @@ const Gyms = () => {
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
+                                                    onClick={() => navigate(`/gyms/${gym._id}`)}
+                                                    className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleEdit(gym)}
                                                     className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                                     title="Edit"
                                                 >
                                                     <Edit size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleSuspend(gym)}
+                                                    className="p-1 text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                                                    title={gym.isActive ? 'Suspend' : 'Activate'}
+                                                >
+                                                    {gym.isActive ? <PowerOff size={18} /> : <Power size={18} />}
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(gym)}

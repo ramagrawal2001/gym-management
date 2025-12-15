@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom';
 import { useRole } from '../../hooks/useRole';
 
 const RoleGuard = ({ children, allowedRoles, fallback = null }) => {
@@ -8,11 +9,8 @@ const RoleGuard = ({ children, allowedRoles, fallback = null }) => {
   }
 
   if (!hasRole(allowedRoles)) {
-    return fallback || (
-      <div className="p-6 text-center">
-        <p className="text-gray-600 dark:text-gray-400">You don't have permission to access this page.</p>
-      </div>
-    );
+    // Redirect to unauthorized page instead of showing fallback
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

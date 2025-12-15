@@ -3,12 +3,17 @@ import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.
 
 // @desc    Get all equipment
 // @route   GET /api/v1/equipment
-// @access  Private
+// @access  Private (Staff can view, Owner can manage)
 export const getEquipment = async (req, res) => {
   try {
+    // Members cannot access equipment
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot access equipment');
+    }
+
     const { page = 1, limit = 10, category, status, search } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
 
     const query = { gymId };
     
@@ -76,10 +81,15 @@ export const getEquipmentItem = async (req, res) => {
 
 // @desc    Create equipment
 // @route   POST /api/v1/equipment
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const createEquipment = async (req, res) => {
   try {
-    const gymId = req.user.gymId;
+    // Staff and members cannot create equipment
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can create equipment');
+    }
+
+    const gymId = req.gymId || req.user.gymId;
     const equipment = await Equipment.create({ ...req.body, gymId });
     
     sendCreated(res, 'Equipment created successfully', equipment);
@@ -90,17 +100,31 @@ export const createEquipment = async (req, res) => {
 
 // @desc    Update equipment
 // @route   PUT /api/v1/equipment/:id
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const updateEquipment = async (req, res) => {
   try {
-    const equipment = await Equipment.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
+    // Staff and members cannot update equipment
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can update equipment');
+    }
+
+    const equipment = await Equipment.findById(req.params.id);
 
     if (!equipment) {
       return sendError(res, 404, 'Equipment not found');
     }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (equipment.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
+    }
+
+    const updated = await Equipment.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
 
     // Auto-update status based on condition
     if (req.body.condition) {
@@ -122,13 +146,25 @@ export const updateEquipment = async (req, res) => {
 
 // @desc    Record service
 // @route   PUT /api/v1/equipment/:id/service
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const recordService = async (req, res) => {
   try {
+    // Staff and members cannot record service
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can record equipment service');
+    }
+
     const equipment = await Equipment.findById(req.params.id);
 
     if (!equipment) {
       return sendError(res, 404, 'Equipment not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (equipment.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     equipment.lastService = new Date();

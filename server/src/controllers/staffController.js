@@ -4,12 +4,17 @@ import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.
 
 // @desc    Get all staff
 // @route   GET /api/v1/staff
-// @access  Private
+// @access  Private (Staff can view, Owner/Super Admin can manage)
 export const getStaff = async (req, res) => {
   try {
+    // Members cannot access staff
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot access staff information');
+    }
+
     const { page = 1, limit = 10, search, isActive } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
 
     const query = { gymId };
     
@@ -74,11 +79,16 @@ export const getStaffMember = async (req, res) => {
 
 // @desc    Create staff
 // @route   POST /api/v1/staff
-// @access  Private (Owner or Super Admin)
+// @access  Private (Owner or Super Admin only)
 export const createStaff = async (req, res) => {
   try {
+    // Staff and members cannot create staff
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can create staff');
+    }
+
     const { userId, specialty, certifications, schedule, hourlyRate } = req.body;
-    const gymId = req.user.gymId;
+    const gymId = req.gymId || req.user.gymId;
 
     // Check if user exists and has staff role
     const user = await User.findById(userId);
@@ -110,20 +120,34 @@ export const createStaff = async (req, res) => {
 
 // @desc    Update staff
 // @route   PUT /api/v1/staff/:id
-// @access  Private (Owner or Super Admin)
+// @access  Private (Owner or Super Admin only)
 export const updateStaff = async (req, res) => {
   try {
-    const staff = await Staff.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    })
-      .populate('userId', 'email firstName lastName phone avatar');
+    // Staff and members cannot update staff
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can update staff');
+    }
+
+    const staff = await Staff.findById(req.params.id);
 
     if (!staff) {
       return sendError(res, 404, 'Staff member not found');
     }
 
-    sendSuccess(res, 'Staff updated successfully', staff);
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (staff.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
+    }
+
+    const updated = await Staff.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    })
+      .populate('userId', 'email firstName lastName phone avatar');
+
+    sendSuccess(res, 'Staff updated successfully', updated);
   } catch (error) {
     sendError(res, 500, 'Failed to update staff', error.message);
   }
@@ -131,13 +155,25 @@ export const updateStaff = async (req, res) => {
 
 // @desc    Delete staff
 // @route   DELETE /api/v1/staff/:id
-// @access  Private (Owner or Super Admin)
+// @access  Private (Owner or Super Admin only)
 export const deleteStaff = async (req, res) => {
   try {
+    // Staff and members cannot delete staff
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can delete staff');
+    }
+
     const staff = await Staff.findById(req.params.id);
 
     if (!staff) {
       return sendError(res, 404, 'Staff member not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (staff.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     await staff.deleteOne();

@@ -2,31 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authService from '../../services/authService';
 
 // Async thunks
-export const login = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await authService.login(credentials);
-      // Handle different response structures
-      const responseData = response.data;
-      const token = responseData?.data?.token || responseData?.token;
-      const user = responseData?.data?.user || responseData?.user;
-      
-      // Store token in localStorage
-      if (token) {
-        localStorage.setItem('token', token);
-      }
-      
-      return {
-        token,
-        user
-      };
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
-    }
-  }
-);
-
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
@@ -37,17 +12,43 @@ export const register = createAsyncThunk(
       const token = responseData?.data?.token || responseData?.token;
       const user = responseData?.data?.user || responseData?.user;
       
-      // Store token in localStorage
-      if (token) {
-        localStorage.setItem('token', token);
-      }
-      
       return {
         token,
         user
       };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
+    }
+  }
+);
+
+export const requestOtp = createAsyncThunk(
+  'auth/requestOtp',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await authService.requestOtp(email);
+      return response.data?.data || response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to send OTP');
+    }
+  }
+);
+
+export const verifyOtp = createAsyncThunk(
+  'auth/verifyOtp',
+  async ({ email, otp }, { rejectWithValue }) => {
+    try {
+      const response = await authService.verifyOtp(email, otp);
+      const responseData = response.data;
+      const token = responseData?.data?.token || responseData?.token;
+      const user = responseData?.data?.user || responseData?.user;
+      
+      return {
+        token,
+        user
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'OTP verification failed');
     }
   }
 );
@@ -62,7 +63,6 @@ export const getCurrentUser = createAsyncThunk(
     } catch (error) {
       // If 401, clear token and don't reject (will redirect to login)
       if (error.response?.status === 401) {
-        localStorage.removeItem('token');
         return rejectWithValue('Unauthorized');
       }
       return rejectWithValue(error.response?.data?.message || 'Failed to get user');
@@ -84,8 +84,8 @@ export const updateProfile = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null
 };
@@ -98,7 +98,6 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
     },
     clearError: (state) => {
       state.error = null;
@@ -106,37 +105,10 @@ const authSlice = createSlice({
     setToken: (state, action) => {
       state.token = action.payload;
       state.isAuthenticated = !!action.payload;
-      if (action.payload) {
-        localStorage.setItem('token', action.payload);
-      } else {
-        localStorage.removeItem('token');
-      }
     }
   },
   extraReducers: (builder) => {
     builder
-      // Login
-      .addCase(login.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const payload = action.payload;
-        state.user = payload.user;
-        state.token = payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-        // Ensure token is in localStorage
-        if (payload.token) {
-          localStorage.setItem('token', payload.token);
-        }
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-        state.isAuthenticated = false;
-      })
       // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
@@ -149,12 +121,39 @@ const authSlice = createSlice({
         state.token = payload.token;
         state.isAuthenticated = true;
         state.error = null;
-        // Ensure token is in localStorage
-        if (payload.token) {
-          localStorage.setItem('token', payload.token);
-        }
       })
       .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.isAuthenticated = false;
+      })
+      // Request OTP
+      .addCase(requestOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(requestOtp.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(requestOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Verify OTP
+      .addCase(verifyOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const payload = action.payload;
+        state.user = payload.user;
+        state.token = payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
         state.isAuthenticated = false;
@@ -168,11 +167,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
-        // Ensure token is set from localStorage
-        const token = localStorage.getItem('token');
-        if (token) {
-          state.token = token;
-        }
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -180,7 +174,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
-        localStorage.removeItem('token');
       })
       // Update profile
       .addCase(updateProfile.pending, (state) => {

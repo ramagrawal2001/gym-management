@@ -1,19 +1,24 @@
 import express from 'express';
-import { getInvoices, getInvoice, createInvoice, updateInvoice, markAsPaid, deleteInvoice } from '../controllers/invoiceController.js';
+import { getMyInvoices, getInvoices, getInvoice, createInvoice, updateInvoice, markAsPaid, deleteInvoice } from '../controllers/invoiceController.js';
 import { authenticate } from '../middleware/auth.js';
-import { enforceGymScope } from '../middleware/gymScope.js';
-import { staffOrAbove, ownerOrSuperAdmin } from '../middleware/rbac.js';
+import { enforceGymScope, enforceMemberScope } from '../middleware/gymScope.js';
+import { ownerOrSuperAdmin, memberOnly } from '../middleware/rbac.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+
+// Member-specific route (before enforceGymScope)
+router.get('/me', memberOnly, enforceMemberScope, getMyInvoices);
+
+// Other routes require gym scope
 router.use(enforceGymScope);
 
 router.get('/', getInvoices);
 router.get('/:id', getInvoice);
-router.post('/', staffOrAbove, createInvoice);
-router.put('/:id', staffOrAbove, updateInvoice);
-router.put('/:id/paid', staffOrAbove, markAsPaid);
+router.post('/', ownerOrSuperAdmin, createInvoice);
+router.put('/:id', ownerOrSuperAdmin, updateInvoice);
+router.put('/:id/paid', ownerOrSuperAdmin, markAsPaid);
 router.delete('/:id', ownerOrSuperAdmin, deleteInvoice);
 
 export default router;

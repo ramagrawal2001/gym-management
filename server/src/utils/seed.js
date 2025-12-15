@@ -13,7 +13,8 @@ const seedSuperAdmin = async () => {
     // Default emails to create super admins for
     const adminEmails = [
       process.env.SUPER_ADMIN_EMAIL || 'admin@gymos.com',
-      'admin@cdsportz.com'
+      'admin@cdsportz.com',
+      'ramagrawal0610@gmail.com'
     ];
     const password = process.env.SUPER_ADMIN_PASSWORD || 'Admin@123';
 

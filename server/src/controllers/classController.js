@@ -1,6 +1,49 @@
 import Class from '../models/Class.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
 
+// @desc    Get available classes for booking
+// @route   GET /api/v1/classes/available
+// @access  Private (Member)
+export const getAvailableClasses = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, dayOfWeek } = req.query;
+    const skip = (page - 1) * limit;
+    
+    // Find member record
+    const Member = (await import('../models/Member.js')).default;
+    const member = await Member.findOne({ userId: req.user._id });
+    
+    if (!member) {
+      return sendError(res, 404, 'Member profile not found');
+    }
+
+    const query = { gymId: member.gymId, isActive: true };
+    
+    if (dayOfWeek !== undefined) {
+      query['schedule.dayOfWeek'] = parseInt(dayOfWeek);
+    }
+
+    const classes = await Class.find(query)
+      .populate('trainerId', 'firstName lastName email')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ 'schedule.dayOfWeek': 1, 'schedule.startTime': 1 });
+
+    const total = await Class.countDocuments(query);
+
+    sendSuccess(res, 'Available classes retrieved successfully', classes, {
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    sendError(res, 500, 'Failed to get available classes', error.message);
+  }
+};
+
 // @desc    Get all classes
 // @route   GET /api/v1/classes
 // @access  Private
@@ -8,7 +51,7 @@ export const getClasses = async (req, res) => {
   try {
     const { page = 1, limit = 10, trainerId, dayOfWeek } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
 
     const query = { gymId, isActive: true };
     
@@ -64,10 +107,15 @@ export const getClass = async (req, res) => {
 
 // @desc    Create class
 // @route   POST /api/v1/classes
-// @access  Private (Staff or above)
+// @access  Private (Staff or above, not members)
 export const createClass = async (req, res) => {
   try {
-    const gymId = req.user.gymId;
+    // Members cannot create classes
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot create classes');
+    }
+
+    const gymId = req.gymId || req.user.gymId;
     const classItem = await Class.create({ ...req.body, gymId });
     
     const populated = await Class.findById(classItem._id)
@@ -81,20 +129,41 @@ export const createClass = async (req, res) => {
 
 // @desc    Update class
 // @route   PUT /api/v1/classes/:id
-// @access  Private (Staff or above)
+// @access  Private (Staff or above, not members)
 export const updateClass = async (req, res) => {
   try {
-    const classItem = await Class.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    })
-      .populate('trainerId', 'firstName lastName email');
+    // Members cannot update classes
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot update classes');
+    }
+
+    const classItem = await Class.findById(req.params.id);
 
     if (!classItem) {
       return sendError(res, 404, 'Class not found');
     }
 
-    sendSuccess(res, 'Class updated successfully', classItem);
+    // Staff can only update classes they are assigned to
+    if (req.user.role === 'staff') {
+      if (classItem.trainerId.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, 'Access denied: Can only update assigned classes');
+      }
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (classItem.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
+    }
+
+    const updated = await Class.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    })
+      .populate('trainerId', 'firstName lastName email');
+
+    sendSuccess(res, 'Class updated successfully', updated);
   } catch (error) {
     sendError(res, 500, 'Failed to update class', error.message);
   }
@@ -102,14 +171,31 @@ export const updateClass = async (req, res) => {
 
 // @desc    Book class
 // @route   POST /api/v1/classes/:id/book
-// @access  Private
+// @access  Private (Member or Staff)
 export const bookClass = async (req, res) => {
   try {
-    const { memberId } = req.body;
+    let { memberId } = req.body;
     const classItem = await Class.findById(req.params.id);
 
     if (!classItem) {
       return sendError(res, 404, 'Class not found');
+    }
+
+    // If member is booking, use their memberId
+    if (req.user.role === 'member') {
+      const Member = (await import('../models/Member.js')).default;
+      const member = await Member.findOne({ userId: req.user._id });
+      if (!member) {
+        return sendError(res, 404, 'Member profile not found');
+      }
+      memberId = member._id;
+      
+      // Verify class is in member's gym
+      if (classItem.gymId.toString() !== member.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Class not available in your gym');
+      }
+    } else if (!memberId) {
+      return sendError(res, 400, 'Member ID is required');
     }
 
     // Check capacity
@@ -141,13 +227,34 @@ export const bookClass = async (req, res) => {
 
 // @desc    Cancel booking
 // @route   DELETE /api/v1/classes/:id/book/:bookingId
-// @access  Private
+// @access  Private (Member or Staff)
 export const cancelBooking = async (req, res) => {
   try {
     const classItem = await Class.findById(req.params.id);
 
     if (!classItem) {
       return sendError(res, 404, 'Class not found');
+    }
+
+    // Find the booking
+    const booking = classItem.bookings.find(
+      b => b._id.toString() === req.params.bookingId
+    );
+
+    if (!booking) {
+      return sendError(res, 404, 'Booking not found');
+    }
+
+    // Members can only cancel their own bookings
+    if (req.user.role === 'member') {
+      const Member = (await import('../models/Member.js')).default;
+      const member = await Member.findOne({ userId: req.user._id });
+      if (!member) {
+        return sendError(res, 404, 'Member profile not found');
+      }
+      if (booking.memberId.toString() !== member._id.toString()) {
+        return sendError(res, 403, 'Access denied: Can only cancel your own bookings');
+      }
     }
 
     classItem.bookings = classItem.bookings.filter(
@@ -163,13 +270,25 @@ export const cancelBooking = async (req, res) => {
 
 // @desc    Delete class
 // @route   DELETE /api/v1/classes/:id
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin)
 export const deleteClass = async (req, res) => {
   try {
+    // Members and staff cannot delete classes
+    if (req.user.role === 'member' || req.user.role === 'staff') {
+      return sendError(res, 403, 'Access denied: Only owners can delete classes');
+    }
+
     const classItem = await Class.findById(req.params.id);
 
     if (!classItem) {
       return sendError(res, 404, 'Class not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (classItem.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     await classItem.deleteOne();

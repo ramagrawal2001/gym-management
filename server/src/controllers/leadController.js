@@ -3,12 +3,17 @@ import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.
 
 // @desc    Get all leads
 // @route   GET /api/v1/leads
-// @access  Private
+// @access  Private (Staff and Owner, not Members)
 export const getLeads = async (req, res) => {
   try {
+    // Members cannot access leads
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot access leads');
+    }
+
     const { page = 1, limit = 10, status, search } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
 
     const query = { gymId };
     
@@ -66,10 +71,15 @@ export const getLead = async (req, res) => {
 
 // @desc    Create lead
 // @route   POST /api/v1/leads
-// @access  Private
+// @access  Private (Staff and Owner, not Members)
 export const createLead = async (req, res) => {
   try {
-    const gymId = req.user.gymId;
+    // Members cannot create leads
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot create leads');
+    }
+
+    const gymId = req.gymId || req.user.gymId;
     const lead = await Lead.create({ ...req.body, gymId });
     
     const populated = await Lead.findById(lead._id)
@@ -83,20 +93,34 @@ export const createLead = async (req, res) => {
 
 // @desc    Update lead
 // @route   PUT /api/v1/leads/:id
-// @access  Private
+// @access  Private (Staff and Owner, not Members)
 export const updateLead = async (req, res) => {
   try {
-    const lead = await Lead.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    })
-      .populate('assignedTo', 'firstName lastName email');
+    // Members cannot update leads
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot update leads');
+    }
+
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
       return sendError(res, 404, 'Lead not found');
     }
 
-    sendSuccess(res, 'Lead updated successfully', lead);
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (lead.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
+    }
+
+    const updated = await Lead.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    })
+      .populate('assignedTo', 'firstName lastName email');
+
+    sendSuccess(res, 'Lead updated successfully', updated);
   } catch (error) {
     sendError(res, 500, 'Failed to update lead', error.message);
   }
@@ -104,14 +128,26 @@ export const updateLead = async (req, res) => {
 
 // @desc    Update lead status
 // @route   PUT /api/v1/leads/:id/status
-// @access  Private
+// @access  Private (Staff and Owner, not Members)
 export const updateLeadStatus = async (req, res) => {
   try {
+    // Members cannot update lead status
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot update lead status');
+    }
+
     const { status } = req.body;
     const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
       return sendError(res, 404, 'Lead not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (lead.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     lead.status = status;
@@ -135,13 +171,25 @@ export const updateLeadStatus = async (req, res) => {
 
 // @desc    Delete lead
 // @route   DELETE /api/v1/leads/:id
-// @access  Private
+// @access  Private (Staff and Owner, not Members)
 export const deleteLead = async (req, res) => {
   try {
+    // Members cannot delete leads
+    if (req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Members cannot delete leads');
+    }
+
     const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
       return sendError(res, 404, 'Lead not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (lead.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     await lead.deleteOne();

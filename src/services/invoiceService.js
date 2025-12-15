@@ -31,3 +31,8 @@ export const deleteInvoice = async (invoiceId) => {
   return response;
 };
 
+export const getMyInvoices = async (params) => {
+  const response = await api.get(`${API_ENDPOINTS.INVOICES.BASE}/me`, { params });
+  return response;
+};
+

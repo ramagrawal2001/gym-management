@@ -36,3 +36,8 @@ export const deleteClass = async (classId) => {
   return response;
 };
 
+export const getAvailableClasses = async (params) => {
+  const response = await api.get(`${API_ENDPOINTS.CLASSES.BASE}/available`, { params });
+  return response;
+};
+

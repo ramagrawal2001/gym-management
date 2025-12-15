@@ -3,10 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useDispatch } from 'react-redux';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import RoleGuard from './components/auth/RoleGuard';
+import FeatureGuard from './components/auth/FeatureGuard';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import MemberProfile from './pages/MemberProfile';
@@ -19,20 +22,22 @@ import Settings from './pages/Settings';
 import CRM from './pages/CRM';
 import Schedule from './pages/Schedule';
 import Gyms from './pages/Gyms';
+import GymDetails from './pages/GymDetails';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
 
 function AppRoutes() {
     const dispatch = useDispatch();
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, token } = useAuth();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token && !isAuthenticated) {
+        // Check if we have a token in store but user data is missing (needs refresh)
+        // Redux Persist will restore both token and user, but we may need to refresh user data
+        if (token && !user && !isAuthenticated) {
             dispatch(getCurrentUser());
         }
-    }, [dispatch, isAuthenticated]);
+    }, [dispatch, isAuthenticated, user, token]);
 
     useEffect(() => {
         // Only fetch gym if user has gymId (super_admin doesn't have gymId)
@@ -51,6 +56,7 @@ function AppRoutes() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
             <Route 
                 path="/" 
@@ -61,17 +67,132 @@ function AppRoutes() {
                 }
             >
                 <Route index element={<Dashboard />} />
-                <Route path="gyms" element={<Gyms />} />
-                <Route path="crm" element={<CRM />} />
-                <Route path="schedule" element={<Schedule />} />
-                <Route path="members" element={<Members />} />
-                <Route path="members/:id" element={<MemberProfile />} />
-                <Route path="plans" element={<Plans />} />
-                <Route path="payments" element={<Payments />} />
-                <Route path="attendance" element={<Attendance />} />
-                <Route path="trainers" element={<Trainers />} />
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="settings" element={<Settings />} />
+                
+                {/* Super Admin only routes */}
+                <Route 
+                    path="gyms" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin']}>
+                            <Gyms />
+                        </RoleGuard>
+                    } 
+                />
+                <Route 
+                    path="gyms/:id" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin']}>
+                            <GymDetails />
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* CRM - Owner and Staff, requires CRM feature */}
+                <Route 
+                    path="crm" 
+                    element={
+                        <RoleGuard allowedRoles={['owner', 'staff']}>
+                            <FeatureGuard feature="crm">
+                                <CRM />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Schedule - Owner and Staff, requires scheduling feature */}
+                <Route 
+                    path="schedule" 
+                    element={
+                        <RoleGuard allowedRoles={['owner', 'staff']}>
+                            <FeatureGuard feature="scheduling">
+                                <Schedule />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Members - Super Admin, Owner, Staff */}
+                <Route 
+                    path="members" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
+                            <Members />
+                        </RoleGuard>
+                    } 
+                />
+                <Route 
+                    path="members/:id" 
+                    element={
+                        <MemberProfile />
+                    } 
+                />
+                
+                {/* Plans - Super Admin and Owner only */}
+                <Route 
+                    path="plans" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <Plans />
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Payments - Super Admin and Owner only, requires payments feature */}
+                <Route 
+                    path="payments" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FeatureGuard feature="payments">
+                                <Payments />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Attendance - Owner and Staff, requires attendance feature */}
+                <Route 
+                    path="attendance" 
+                    element={
+                        <RoleGuard allowedRoles={['owner', 'staff']}>
+                            <FeatureGuard feature="attendance">
+                                <Attendance />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Trainers - Super Admin, Owner, Staff, requires staff feature */}
+                <Route 
+                    path="trainers" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
+                            <FeatureGuard feature="staff">
+                                <Trainers />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Inventory - Owner and Staff, requires inventory feature */}
+                <Route 
+                    path="inventory" 
+                    element={
+                        <RoleGuard allowedRoles={['owner', 'staff']}>
+                            <FeatureGuard feature="inventory">
+                                <Inventory />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    } 
+                />
+                
+                {/* Settings - Super Admin and Owner only */}
+                <Route 
+                    path="settings" 
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <Settings />
+                        </RoleGuard>
+                    } 
+                />
             </Route>
 
                 <Route path="*" element={<NotFound />} />

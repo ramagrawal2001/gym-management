@@ -4,14 +4,66 @@ import Plan from '../models/Plan.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
 import { generateInvoiceNumber, calculateInvoiceTotal } from '../services/invoiceService.js';
 
+// @desc    Get member's own invoices
+// @route   GET /api/v1/invoices/me
+// @access  Private (Member)
+export const getMyInvoices = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Find member record
+    const member = await Member.findOne({ userId: req.user._id });
+    
+    if (!member) {
+      return sendError(res, 404, 'Member profile not found');
+    }
+
+    const query = { memberId: member._id };
+    
+    if (status) {
+      query.status = status;
+    }
+
+    const invoices = await Invoice.find(query)
+      .populate('memberId', 'memberId')
+      .populate('memberId.userId', 'firstName lastName email')
+      .populate('planId', 'name price')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Invoice.countDocuments(query);
+
+    sendSuccess(res, 'Invoices retrieved successfully', invoices, {
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    sendError(res, 500, 'Failed to get invoices', error.message);
+  }
+};
+
 // @desc    Get all invoices
 // @route   GET /api/v1/invoices
-// @access  Private
+// @access  Private (Owner, Super Admin - Staff and Members cannot access)
 export const getInvoices = async (req, res) => {
   try {
+    // Staff and members cannot access all invoices
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      if (req.user.role === 'member') {
+        return getMyInvoices(req, res);
+      }
+      return sendError(res, 403, 'Access denied: Staff cannot access invoices');
+    }
+
     const { page = 1, limit = 10, memberId, status, search } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
 
     const query = { gymId };
     
@@ -56,12 +108,31 @@ export const getInvoices = async (req, res) => {
 export const getInvoice = async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id)
-      .populate('memberId', 'memberId')
+      .populate('memberId', 'memberId userId')
       .populate('memberId.userId', 'firstName lastName email phone')
       .populate('planId', 'name price duration features');
 
     if (!invoice) {
       return sendError(res, 404, 'Invoice not found');
+    }
+
+    // Members can only view their own invoices
+    if (req.user.role === 'member') {
+      if (invoice.memberId.userId._id.toString() !== req.user._id.toString()) {
+        return sendError(res, 403, 'Access denied: Cannot view other members\' invoices');
+      }
+    }
+
+    // Staff cannot access invoices
+    if (req.user.role === 'staff') {
+      return sendError(res, 403, 'Access denied: Staff cannot access invoices');
+    }
+
+    // Owner/Super Admin can view invoices from their gym
+    if (req.user.role !== 'super_admin' && req.user.role !== 'member') {
+      if (invoice.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     sendSuccess(res, 'Invoice retrieved successfully', invoice);
@@ -72,11 +143,16 @@ export const getInvoice = async (req, res) => {
 
 // @desc    Create invoice
 // @route   POST /api/v1/invoices
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const createInvoice = async (req, res) => {
   try {
+    // Staff and members cannot create invoices
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can create invoices');
+    }
+
     const { memberId, planId, items, taxRate = 0, discount = 0, dueDate } = req.body;
-    const gymId = req.user.gymId;
+    const gymId = req.gymId || req.user.gymId;
 
     // Get member
     const member = await Member.findById(memberId);
@@ -138,13 +214,25 @@ export const createInvoice = async (req, res) => {
 
 // @desc    Update invoice
 // @route   PUT /api/v1/invoices/:id
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const updateInvoice = async (req, res) => {
   try {
+    // Staff and members cannot update invoices
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can update invoices');
+    }
+
     const invoice = await Invoice.findById(req.params.id);
 
     if (!invoice) {
       return sendError(res, 404, 'Invoice not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (invoice.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     // Recalculate totals if items changed
@@ -175,13 +263,25 @@ export const updateInvoice = async (req, res) => {
 
 // @desc    Mark invoice as paid
 // @route   PUT /api/v1/invoices/:id/paid
-// @access  Private (Staff or above)
+// @access  Private (Owner or Super Admin only)
 export const markAsPaid = async (req, res) => {
   try {
+    // Staff and members cannot mark invoices as paid
+    if (req.user.role === 'staff' || req.user.role === 'member') {
+      return sendError(res, 403, 'Access denied: Only owners can mark invoices as paid');
+    }
+
     const invoice = await Invoice.findById(req.params.id);
 
     if (!invoice) {
       return sendError(res, 404, 'Invoice not found');
+    }
+
+    // Verify gym scope for non-super-admin
+    if (req.user.role !== 'super_admin') {
+      if (invoice.gymId.toString() !== req.user.gymId.toString()) {
+        return sendError(res, 403, 'Access denied: Invalid gym scope');
+      }
     }
 
     invoice.status = 'paid';
