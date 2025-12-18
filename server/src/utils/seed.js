@@ -7,14 +7,13 @@ dotenv.config();
 const seedSuperAdmin = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gymos');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://globalprotechin_db_user:evJlNrZRFfCrXbjC@cluster0.ufhjyge.mongodb.net/gym');
     console.log('MongoDB Connected');
 
     // Default emails to create super admins for
     const adminEmails = [
-      process.env.SUPER_ADMIN_EMAIL || 'admin@gymos.com',
-      'admin@cdsportz.com',
-      'ramagrawal0610@gmail.com'
+      'ramagrawal0610@gmail.com',
+      'deepakgupta83404@gmail.com'
     ];
     const password = process.env.SUPER_ADMIN_PASSWORD || 'Admin@123';
 

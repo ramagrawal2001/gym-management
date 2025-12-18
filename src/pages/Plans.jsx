@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import * as planService from '../services/planService';
+import CreatePlanModal from '../components/plans/CreatePlanModal';
 import * as gymService from '../services/gymService';
 import { useRole } from '../hooks/useRole';
 import { useNotification } from '../hooks/useNotification';
@@ -15,6 +16,8 @@ const Plans = () => {
     const [plans, setPlans] = useState([]);
     const [gyms, setGyms] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState(null);
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'subscription', 'member'
 
     useEffect(() => {
@@ -41,10 +44,27 @@ const Plans = () => {
             const plansData = response.data?.data || response.data || [];
             setPlans(Array.isArray(plansData) ? plansData : []);
         } catch (error) {
+            console.error(error);
             showError('Failed to load plans');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handlePlanCreated = () => {
+        showSuccess(`Plan ${editingPlan ? 'updated' : 'created'} successfully`);
+        loadPlans();
+        setEditingPlan(null);
+    };
+
+    const handleEditClick = (plan) => {
+        setEditingPlan(plan);
+        setIsCreateModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsCreateModalOpen(false);
+        setEditingPlan(null);
     };
 
     // For super admin: distinguish between subscription plans (used by gyms) and member plans
@@ -96,47 +116,51 @@ const Plans = () => {
                         {isSuperAdmin() ? 'Plans Management' : 'Membership Plans'}
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400">
-                        {isSuperAdmin() 
+                        {isSuperAdmin()
                             ? 'Manage subscription plans for gyms and member plans.'
                             : 'Configure your gym\'s pricing tiers.'}
                     </p>
                 </div>
-                <Button>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
                     <Plus size={20} className="mr-2" />
                     Create Plan
                 </Button>
             </div>
 
+            <CreatePlanModal
+                isOpen={isCreateModalOpen}
+                onClose={handleModalClose}
+                onSuccess={handlePlanCreated}
+                plan={editingPlan}
+            />
+
             {isSuperAdmin() && (
                 <div className="flex gap-2 border-b border-gray-200 dark:border-slate-700">
                     <button
                         onClick={() => setActiveTab('all')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                            activeTab === 'all'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                        }`}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'all'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            }`}
                     >
                         All Plans
                     </button>
                     <button
                         onClick={() => setActiveTab('subscription')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                            activeTab === 'subscription'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                        }`}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'subscription'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            }`}
                     >
                         <Building2 size={16} />
                         Subscription Plans
                     </button>
                     <button
                         onClick={() => setActiveTab('member')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
-                            activeTab === 'member'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                        }`}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'member'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            }`}
                     >
                         <Users size={16} />
                         Member Plans
@@ -191,7 +215,7 @@ const Plans = () => {
                                 )}
 
                                 <div className="mt-8 flex gap-3">
-                                    <Button variant="secondary" className="w-full">
+                                    <Button variant="secondary" className="w-full" onClick={() => handleEditClick(plan)}>
                                         <Edit2 size={16} className="mr-2" /> Edit
                                     </Button>
                                     {isSuperAdmin() && (

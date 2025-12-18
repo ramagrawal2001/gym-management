@@ -57,7 +57,7 @@ app.use('/api/v1/equipment', equipmentRoutes);
 app.use(errorHandler);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gymos')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://globalprotechin_db_user:evJlNrZRFfCrXbjC@cluster0.ufhjyge.mongodb.net/gym')
   .then(() => {
     console.log('MongoDB Connected');
     
