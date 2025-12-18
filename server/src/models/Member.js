@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const memberSchema = new mongoose.Schema({
+  profileImage: {
+    url: { type: String },
+    publicId: { type: String }
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -16,12 +20,14 @@ const memberSchema = new mongoose.Schema({
     ref: 'Plan',
     required: true
   },
+
   memberId: {
     type: String,
     unique: true,
     sparse: true,
     trim: true
   },
+
   subscriptionStart: {
     type: Date,
     required: true
@@ -30,21 +36,37 @@ const memberSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+
   status: {
     type: String,
     enum: ['active', 'expired', 'suspended', 'cancelled'],
     default: 'active'
   },
+
+  bloodGroup: {
+    type: String,
+    enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+  },
+
+  address: {
+    street: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    pincode: { type: String, trim: true }
+  },
+
   emergencyContact: {
     name: { type: String },
     phone: { type: String },
     relation: { type: String }
   },
+
   medicalInfo: {
     conditions: [String],
     medications: [String],
     allergies: [String]
   },
+
   workoutPlan: {
     type: String,
     trim: true
@@ -57,18 +79,19 @@ const memberSchema = new mongoose.Schema({
     type: String,
     trim: true
   }
+
 }, {
   timestamps: true
 });
 
-// Generate member ID before saving
+// Auto-generate Member ID
 memberSchema.pre('save', async function(next) {
   if (!this.memberId) {
-    const count = await mongoose.model('Member').countDocuments({ gymId: this.gymId });
+    const count = await mongoose.model('Member')
+      .countDocuments({ gymId: this.gymId });
     this.memberId = `M${String(count + 1).padStart(6, '0')}`;
   }
   next();
 });
 
 export default mongoose.model('Member', memberSchema);
-
