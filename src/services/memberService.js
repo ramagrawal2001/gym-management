@@ -12,12 +12,46 @@ export const getMember = async (memberId) => {
 };
 
 export const createMember = async (memberData) => {
-  const response = await api.post(API_ENDPOINTS.MEMBERS.BASE, memberData);
+  const { profileImageFile, ...data } = memberData;
+  
+  // If there's a profile image file, use FormData
+  if (profileImageFile && profileImageFile instanceof File) {
+    const formData = new FormData();
+    formData.append('profileImage', profileImageFile);
+    formData.append('data', JSON.stringify(data));
+    
+    const response = await api.post(API_ENDPOINTS.MEMBERS.BASE, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response;
+  }
+  
+  // Otherwise, send as JSON
+  const response = await api.post(API_ENDPOINTS.MEMBERS.BASE, data);
   return response;
 };
 
 export const updateMember = async (memberId, memberData) => {
-  const response = await api.put(`${API_ENDPOINTS.MEMBERS.BASE}/${memberId}`, memberData);
+  const { profileImageFile, ...data } = memberData;
+  
+  // If there's a profile image file, use FormData
+  if (profileImageFile && profileImageFile instanceof File) {
+    const formData = new FormData();
+    formData.append('profileImage', profileImageFile);
+    formData.append('data', JSON.stringify(data));
+    
+    const response = await api.put(`${API_ENDPOINTS.MEMBERS.BASE}/${memberId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response;
+  }
+  
+  // Otherwise, send as JSON
+  const response = await api.put(`${API_ENDPOINTS.MEMBERS.BASE}/${memberId}`, data);
   return response;
 };
 

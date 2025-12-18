@@ -6,7 +6,7 @@ import { sendOtpEmail } from '../services/emailService.js';
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
-// @access  Public
+// @access  Public (optionally authenticated for gym owners/staff registering members)
 export const register = async (req, res) => {
   try {
     const { email, role, gymId, firstName, lastName, phone } = req.body;
@@ -23,6 +23,28 @@ export const register = async (req, res) => {
       return sendError(res, 400, 'Invalid role');
     }
 
+    // Determine gymId: 
+    // 1. If authenticated user (owner/staff) is registering a member, use their gymId
+    // 2. Otherwise, use gymId from request body
+    // 3. For non-super_admin roles, gymId is required
+    let finalGymId = gymId;
+    
+    if (req.user && (req.user.role === 'owner' || req.user.role === 'staff')) {
+      // If authenticated owner/staff is registering a member, use their gymId
+      if (role === 'member' || !role) {
+        finalGymId = req.user.gymId;
+      } else if (role && !gymId) {
+        // For other roles, still use authenticated user's gymId if not provided
+        finalGymId = req.user.gymId;
+      }
+    }
+
+    // Validate gymId is provided for non-super_admin roles
+    const userRole = role || 'member';
+    if (userRole !== 'super_admin' && !finalGymId) {
+      return sendError(res, 400, 'gymId is required for this role');
+    }
+
     // Generate a random password (required by schema, but won't be used for login)
     const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
 
@@ -30,8 +52,8 @@ export const register = async (req, res) => {
     const user = await User.create({
       email,
       password: randomPassword, // Random password, not used for login
-      role: role || 'member',
-      gymId: role === 'super_admin' ? undefined : gymId,
+      role: userRole,
+      gymId: userRole === 'super_admin' ? undefined : finalGymId,
       firstName,
       lastName,
       phone

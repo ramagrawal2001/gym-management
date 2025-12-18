@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Input from '../common/Input';
 import Button from '../common/Button';
+import ImageUpload from '../common/ImageUpload';
 import * as planService from '../../services/planService';
 import { BLOOD_GROUPS } from '../../utils/constants';
 
@@ -37,6 +38,7 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
     const [plans, setPlans] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [profileImageFile, setProfileImageFile] = useState(null);
 
     useEffect(() => {
         loadPlans();
@@ -65,6 +67,10 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
                 dietPlan: member.dietPlan || '',
                 notes: member.notes || ''
             });
+            // Set profile image preview if exists
+            if (member.profileImage?.url) {
+                setProfileImageFile(member.profileImage.url);
+            }
         }
     }, [member]);
 
@@ -124,7 +130,8 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
         
         const payload = {
             ...formData,
-            medicalInfo
+            medicalInfo,
+            profileImageFile // Pass the file separately for FormData handling
         };
 
         if (member) {
@@ -149,6 +156,17 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
             )}
 
             <Section title="Personal Information">
+                <div className="md:col-span-2">
+                    <ImageUpload
+                        label="Profile Photo"
+                        value={profileImageFile}
+                        onChange={(file) => {
+                            setProfileImageFile(file);
+                        }}
+                        enableCamera={true}
+                        error={error && !formData.firstName ? 'Profile photo is optional' : ''}
+                    />
+                </div>
                 <Input label="First Name" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required />
                 <Input label="Last Name" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required />
                 <Input label="Email Address" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />

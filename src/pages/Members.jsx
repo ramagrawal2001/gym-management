@@ -68,13 +68,16 @@ const Members = () => {
 
     const handleCreateMember = async (memberData) => {
         try {
+            // Extract profileImageFile and pass it along
+            const payload = { ...memberData };
+            
             if (memberData._id) {
                 // Update existing member
-                await memberService.updateMember(memberData._id, memberData);
+                await memberService.updateMember(memberData._id, payload);
                 showSuccess('Member updated successfully');
             } else {
                 // Create new member
-                await memberService.createMember(memberData);
+                await memberService.createMember(payload);
                 showSuccess('Member created successfully');
             }
             setIsModalOpen(false);

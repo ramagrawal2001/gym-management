@@ -1,6 +1,8 @@
 import Member from '../models/Member.js';
 import User from '../models/User.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
+import { uploadFile } from '../services/uploadService.js';
+import { deleteFile } from '../services/uploadService.js';
 
 // @desc    Get member's own profile
 // @route   GET /api/v1/members/me
@@ -94,13 +96,18 @@ export const getMembers = async (req, res) => {
       });
     }
 
+    // Sort by gymId for super admin, then by createdAt
+    const sortOptions = req.user.role === 'super_admin' 
+      ? { gymId: 1, createdAt: -1 } 
+      : { createdAt: -1 };
+    
     const members = await Member.find(query)
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration')
       .populate('gymId', 'name')
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      .sort(sortOptions);
 
     const total = await Member.countDocuments(query);
 
@@ -161,6 +168,32 @@ export const createMember = async (req, res) => {
       return sendError(res, 403, 'Access denied: Members cannot create member records');
     }
 
+    // Handle photo upload if present
+    let profileImage = null;
+    if (req.file) {
+      try {
+        const uploadResult = await uploadFile(req.file.path, 'members');
+        profileImage = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId
+        };
+      } catch (uploadError) {
+        return sendError(res, 500, 'Failed to upload profile image', uploadError.message);
+      }
+    }
+
+    // Parse JSON body if it's a string (when using multipart/form-data)
+    let bodyData = req.body;
+    if (req.body.data && typeof req.body.data === 'string') {
+      try {
+        bodyData = JSON.parse(req.body.data);
+      } catch (e) {
+        // If parsing fails, use body as is (excluding the data field)
+        const { data, ...rest } = req.body;
+        bodyData = rest;
+      }
+    }
+
     const { 
         email, 
         firstName, 
@@ -171,7 +204,7 @@ export const createMember = async (req, res) => {
         subscriptionEnd, 
         userId, // This will be ignored for creation but good to destructure out
         ...otherData 
-    } = req.body;
+    } = bodyData;
     
     const gymId = req.gymId || req.user.gymId;
 
@@ -218,6 +251,7 @@ export const createMember = async (req, res) => {
       subscriptionStart,
       subscriptionEnd,
       status: 'active',
+      profileImage: profileImage || otherData.profileImage,
       ...otherData
     });
 
@@ -259,7 +293,41 @@ export const updateMember = async (req, res) => {
       return sendError(res, 403, 'Access denied: Invalid gym scope');
     }
 
-    const { email, firstName, lastName, phone, ...memberData } = req.body;
+    // Handle photo upload if present
+    if (req.file) {
+      try {
+        // Delete old image if exists
+        if (member.profileImage?.publicId) {
+          await deleteFile(member.profileImage.publicId);
+        }
+        
+        const uploadResult = await uploadFile(req.file.path, 'members');
+        req.body.profileImage = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId
+        };
+      } catch (uploadError) {
+        return sendError(res, 500, 'Failed to upload profile image', uploadError.message);
+      }
+    }
+
+    // Parse JSON body if it's a string (when using multipart/form-data)
+    let bodyData = req.body;
+    if (req.body.data && typeof req.body.data === 'string') {
+      try {
+        bodyData = JSON.parse(req.body.data);
+        // Merge profileImage from req.body if it was set by file upload
+        if (req.body.profileImage) {
+          bodyData.profileImage = req.body.profileImage;
+        }
+      } catch (e) {
+        // If parsing fails, use body as is (excluding the data field)
+        const { data, ...rest } = req.body;
+        bodyData = rest;
+      }
+    }
+
+    const { email, firstName, lastName, phone, ...memberData } = bodyData;
 
     // Update User model if necessary
     if (email || firstName || lastName || phone) {
