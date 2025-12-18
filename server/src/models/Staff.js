@@ -28,6 +28,10 @@ const staffSchema = new mongoose.Schema({
     type: Number,
     min: 0
   },
+  profileImage: {
+    url: { type: String },
+    publicId: { type: String }
+  },
   isActive: {
     type: Boolean,
     default: true
