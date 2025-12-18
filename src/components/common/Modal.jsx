@@ -2,15 +2,28 @@ import { Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const SIZES = {
+  sm: 'sm:max-w-sm',
+  md: 'sm:max-w-md',
+  lg: 'sm:max-w-lg',
+  xl: 'sm:max-w-xl',
+  '2xl': 'sm:max-w-2xl',
+  '3xl': 'sm:max-w-3xl',
+  '4xl': 'sm:max-w-4xl',
+};
+
+
+const Modal = ({ isOpen, onClose, title, children, size = 'lg' }) => {
     if (!isOpen) return null;
+
+    const sizeClass = SIZES[size] || SIZES.lg;
 
     return createPortal(
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
                 <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
 
-                <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-slate-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-200 dark:border-slate-700">
+                <div className={`relative transform overflow-hidden rounded-lg bg-white dark:bg-slate-800 text-left shadow-xl transition-all sm:my-8 sm:w-full ${sizeClass} border border-gray-200 dark:border-slate-700`}>
                     <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">{title}</h3>

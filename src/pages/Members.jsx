@@ -81,7 +81,9 @@ const Members = () => {
             setSelectedMember(null);
             loadMembers();
         } catch (error) {
-            showError(error.response?.data?.message || 'Failed to save member');
+            const errorMessage = error.response?.data?.message || 'Failed to save member';
+            showError(errorMessage);
+            throw new Error(errorMessage);
         }
     };
 
@@ -281,6 +283,7 @@ const Members = () => {
                     setSelectedMember(null);
                 }}
                 title={selectedMember ? "Edit Member" : "Add New Member"}
+                size="3xl"
             >
                 <MemberForm 
                     member={selectedMember}

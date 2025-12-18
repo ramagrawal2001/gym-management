@@ -161,12 +161,31 @@ export const createMember = async (req, res) => {
       return sendError(res, 403, 'Access denied: Members cannot create member records');
     }
 
-    const { email, firstName, lastName, phone, planId, subscriptionStart, subscriptionEnd, ...otherData } = req.body;
+    const { 
+        email, 
+        firstName, 
+        lastName, 
+        phone, 
+        planId, 
+        subscriptionStart, 
+        subscriptionEnd, 
+        userId, // This will be ignored for creation but good to destructure out
+        ...otherData 
+    } = req.body;
+    
     const gymId = req.gymId || req.user.gymId;
 
+    // --- BACKEND VALIDATION ---
     if (!email || !firstName || !lastName) {
       return sendError(res, 400, 'Email, firstName, and lastName are required.');
     }
+    if (!planId) {
+        return sendError(res, 400, 'planId is required.');
+    }
+    if (!subscriptionStart || !subscriptionEnd) {
+        return sendError(res, 400, 'subscriptionStart and subscriptionEnd dates are required.');
+    }
+    // --- END VALIDATION ---
     
     // Check if user with this email already exists
     let user = await User.findOne({ email });
@@ -193,11 +212,11 @@ export const createMember = async (req, res) => {
 
     // Now, create the member record
     const member = await Member.create({
-      userId: user._id,
+      userId: user._id, // Use the definite user ID
       gymId,
       planId,
-      subscriptionStart: subscriptionStart || new Date(),
-      subscriptionEnd: subscriptionEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
+      subscriptionStart,
+      subscriptionEnd,
       status: 'active',
       ...otherData
     });
@@ -226,43 +245,61 @@ export const createMember = async (req, res) => {
 // @access  Private (Staff or above, or member updating own profile)
 export const updateMember = async (req, res) => {
   try {
-    const member = await Member.findById(req.params.id)
-      .populate('userId', 'email firstName lastName phone avatar');
+    const member = await Member.findById(req.params.id);
 
     if (!member) {
       return sendError(res, 404, 'Member not found');
     }
 
-    // Members can only update their own profile (limited fields)
-    if (req.user.role === 'member') {
-      if (member.userId._id.toString() !== req.user._id.toString()) {
-        return sendError(res, 403, 'Access denied: Cannot update other members\' data');
-      }
-      // Members can only update certain fields (via user profile)
-      // Remove restricted fields
-      delete req.body.planId;
-      delete req.body.subscriptionStart;
-      delete req.body.subscriptionEnd;
-      delete req.body.status;
-      delete req.body.gymId;
-    } else {
-      // Staff/Owner can only update members from their gym
-      if (req.user.role !== 'super_admin') {
-        if (member.gymId.toString() !== req.user.gymId.toString()) {
-          return sendError(res, 403, 'Access denied: Invalid gym scope');
-        }
-      }
+    // Authorization checks
+    if (req.user.role === 'member' && member.userId.toString() !== req.user._id.toString()) {
+      return sendError(res, 403, 'Access denied: Cannot update other members\' data');
+    }
+    if (req.user.role !== 'super_admin' && req.user.role !== 'member' && member.gymId.toString() !== req.user.gymId.toString()) {
+      return sendError(res, 403, 'Access denied: Invalid gym scope');
     }
 
-    const updated = await Member.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    })
-      .populate('userId', 'email firstName lastName phone avatar')
-      .populate('planId', 'name price duration');
+    const { email, firstName, lastName, phone, ...memberData } = req.body;
 
-    sendSuccess(res, 'Member updated successfully', updated);
+    // Update User model if necessary
+    if (email || firstName || lastName || phone) {
+      const user = await User.findById(member.userId);
+      if (!user) {
+        return sendError(res, 404, 'Associated user not found');
+      }
+      if (email) user.email = email;
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      if (phone) user.phone = phone;
+      await user.save();
+    }
+    
+    // For members updating their own profile, restrict fields
+    if (req.user.role === 'member') {
+        delete memberData.planId;
+        delete memberData.subscriptionStart;
+        delete memberData.subscriptionEnd;
+        delete memberData.status;
+        delete memberData.gymId;
+    }
+
+    // Update Member model
+    const updatedMember = await Member.findByIdAndUpdate(req.params.id, memberData, {
+      new: true,
+      runValidators: true,
+    }).populate([
+        { path: 'userId', select: 'email firstName lastName phone avatar' },
+        { path: 'planId', select: 'name price duration' }
+    ]);
+
+    sendSuccess(res, 'Member updated successfully', updatedMember);
   } catch (error) {
+    if (error.code === 11000) {
+      return sendError(res, 409, 'A user with this email already exists.');
+    }
+    if (error.name === 'ValidationError') {
+      return sendError(res, 400, 'Validation failed', Object.values(error.errors).map(e => e.message).join(', '));
+    }
     sendError(res, 500, 'Failed to update member', error.message);
   }
 };
