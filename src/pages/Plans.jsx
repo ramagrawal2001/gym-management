@@ -3,6 +3,7 @@ import { Check, Plus, Edit2, Trash2, Building2, Users } from 'lucide-react';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
+import ConfirmModal from '../components/common/ConfirmModal';
 import * as planService from '../services/planService';
 import CreatePlanModal from '../components/plans/CreatePlanModal';
 import * as gymService from '../services/gymService';
@@ -11,7 +12,7 @@ import { useNotification } from '../hooks/useNotification';
 import { formatCurrency } from '../utils/formatCurrency';
 
 const Plans = () => {
-    const { isSuperAdmin } = useRole();
+    const { isSuperAdmin, isOwner } = useRole();
     const { success: showSuccess, error: showError } = useNotification();
     const [plans, setPlans] = useState([]);
     const [gyms, setGyms] = useState([]);
@@ -19,6 +20,8 @@ const Plans = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState(null);
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'subscription', 'member'
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [planToDelete, setPlanToDelete] = useState(null);
 
     useEffect(() => {
         loadPlans();
@@ -40,7 +43,10 @@ const Plans = () => {
     const loadPlans = async () => {
         setIsLoading(true);
         try {
-            const response = await planService.getPlans({ page: 1, limit: 100 });
+            // For super admin, can optionally filter by gymId
+            // For owners/staff, plans are automatically filtered by their gymId
+            const params = { page: 1, limit: 100 };
+            const response = await planService.getPlans(params);
             const plansData = response.data?.data || response.data || [];
             setPlans(Array.isArray(plansData) ? plansData : []);
         } catch (error) {
@@ -67,23 +73,46 @@ const Plans = () => {
         setEditingPlan(null);
     };
 
+    const handleDeleteClick = (plan) => {
+        setPlanToDelete(plan);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!planToDelete) return;
+        
+        try {
+            await planService.deletePlan(planToDelete._id);
+            showSuccess('Plan deleted successfully');
+            setIsDeleteModalOpen(false);
+            setPlanToDelete(null);
+            loadPlans();
+        } catch (error) {
+            showError(error.response?.data?.message || 'Failed to delete plan');
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setIsDeleteModalOpen(false);
+        setPlanToDelete(null);
+    };
+
     // For super admin: distinguish between subscription plans (used by gyms) and member plans
-    // For gym owners: show only member plans
+    // For gym owners: show only their gym's member plans
     const getFilteredPlans = () => {
         if (!isSuperAdmin()) {
-            // Gym owners see all plans (member plans)
+            // Gym owners see only their gym's plans (already filtered by backend)
             return plans;
         }
 
         // Super admin: filter by active tab
         if (activeTab === 'subscription') {
-            // Plans that are used by gyms (subscription plans)
+            // Plans that are used by gyms (subscription plans - gymId is null or used by gyms)
             const gymPlanIds = new Set(gyms.map(g => g.planId?._id || g.planId).filter(Boolean));
-            return plans.filter(p => gymPlanIds.has(p._id));
+            return plans.filter(p => !p.gymId || gymPlanIds.has(p._id));
         } else if (activeTab === 'member') {
-            // Plans that are NOT used by gyms (member plans)
-            const gymPlanIds = new Set(gyms.map(g => g.planId?._id || g.planId).filter(Boolean));
-            return plans.filter(p => !gymPlanIds.has(p._id));
+            // Plans that have a gymId (member plans for specific gyms)
+            return plans.filter(p => p.gymId);
         }
         // 'all' - show all plans
         return plans;
@@ -91,8 +120,8 @@ const Plans = () => {
 
     const getPlanType = (plan) => {
         if (!isSuperAdmin()) return 'member';
-        const gymPlanIds = new Set(gyms.map(g => g.planId?._id || g.planId).filter(Boolean));
-        return gymPlanIds.has(plan._id) ? 'subscription' : 'member';
+        // If plan has gymId, it's a member plan; if not, it's a subscription plan
+        return plan.gymId ? 'member' : 'subscription';
     };
 
     const formatPrice = (plan) => {
@@ -132,6 +161,16 @@ const Plans = () => {
                 onClose={handleModalClose}
                 onSuccess={handlePlanCreated}
                 plan={editingPlan}
+            />
+
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Plan"
+                message={`Are you sure you want to delete "${planToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
             />
 
             {isSuperAdmin() && (
@@ -199,6 +238,11 @@ const Plans = () => {
                                 {plan.description && (
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{plan.description}</p>
                                 )}
+                                {isSuperAdmin() && plan.gymId && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Gym: {plan.gymId?.name || 'N/A'}
+                                    </p>
+                                )}
                                 <div className="mt-4 flex items-baseline">
                                     <span className="text-4xl font-bold text-gray-900 dark:text-white">{formatPrice(plan)}</span>
                                 </div>
@@ -218,8 +262,12 @@ const Plans = () => {
                                     <Button variant="secondary" className="w-full" onClick={() => handleEditClick(plan)}>
                                         <Edit2 size={16} className="mr-2" /> Edit
                                     </Button>
-                                    {isSuperAdmin() && (
-                                        <Button variant="ghost" className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    {(isSuperAdmin() || isOwner()) && (
+                                        <Button 
+                                            variant="ghost" 
+                                            className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            onClick={() => handleDeleteClick(plan)}
+                                        >
                                             <Trash2 size={16} />
                                         </Button>
                                     )}

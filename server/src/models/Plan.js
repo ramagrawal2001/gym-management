@@ -25,6 +25,15 @@ const planSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  gymId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Gym',
+    required: function() {
+      // gymId is required for all plans except those created by super admin for gym subscriptions
+      // For now, we'll make it required but can be null for super admin's subscription plans
+      return false; // Allow null for backward compatibility and super admin plans
+    }
+  },
   isActive: {
     type: Boolean,
     default: true

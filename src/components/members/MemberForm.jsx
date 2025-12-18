@@ -76,8 +76,10 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
 
     const loadPlans = async () => {
         try {
-            const response = await planService.getPlans({ isActive: true });
-            setPlans(response.data?.data || response.data || []);
+            // Backend automatically filters plans by gymId for non-super-admin users
+            const response = await planService.getPlans({ isActive: true, page: 1, limit: 100 });
+            const plansData = response.data?.data || response.data || [];
+            setPlans(Array.isArray(plansData) ? plansData : []);
         } catch (error) {
             console.error('Failed to load plans:', error);
         }
