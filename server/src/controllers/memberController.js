@@ -161,24 +161,62 @@ export const createMember = async (req, res) => {
       return sendError(res, 403, 'Access denied: Members cannot create member records');
     }
 
-    const { userId, planId, subscriptionStart, subscriptionEnd, ...otherData } = req.body;
+    const { email, firstName, lastName, phone, planId, subscriptionStart, subscriptionEnd, ...otherData } = req.body;
     const gymId = req.gymId || req.user.gymId;
 
+    if (!email || !firstName || !lastName) {
+      return sendError(res, 400, 'Email, firstName, and lastName are required.');
+    }
+    
+    // Check if user with this email already exists
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // If user exists, check if they are already a member of THIS gym
+      const existingMemberInGym = await Member.findOne({ userId: user._id, gymId });
+      if (existingMemberInGym) {
+        return sendError(res, 409, 'This user is already a member of your gym.');
+      }
+    } else {
+      // If user doesn't exist, create a new user record for them
+       const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+      user = await User.create({
+        email,
+        firstName,
+        lastName,
+        phone,
+        password: randomPassword, // OTP login is used, so this is a placeholder
+        role: 'member',
+        gymId, // Associate user with the gym
+      });
+    }
+
+    // Now, create the member record
     const member = await Member.create({
-      userId,
+      userId: user._id,
       gymId,
       planId,
       subscriptionStart: subscriptionStart || new Date(),
-      subscriptionEnd: subscriptionEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+      subscriptionEnd: subscriptionEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
+      status: 'active',
       ...otherData
     });
 
-    const populated = await Member.findById(member._id)
-      .populate('userId', 'email firstName lastName phone avatar')
-      .populate('planId', 'name price duration');
+    const populated = await member.populate([
+      { path: 'userId', select: 'email firstName lastName phone avatar' },
+      { path: 'planId', select: 'name price duration' }
+    ]);
 
     sendCreated(res, 'Member created successfully', populated);
   } catch (error) {
+    // Catch duplicate email error from User model
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
+      return sendError(res, 409, 'A user with this email already exists but could not be added.');
+    }
+    // Catch validation errors
+    if (error.name === 'ValidationError') {
+      return sendError(res, 400, 'Validation failed', Object.values(error.errors).map(e => e.message).join(', '));
+    }
     sendError(res, 500, 'Failed to create member', error.message);
   }
 };

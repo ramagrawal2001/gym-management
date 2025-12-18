@@ -3,8 +3,6 @@ import { Upload } from 'lucide-react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import * as planService from '../../services/planService';
-import * as memberService from '../../services/memberService';
-import * as authService from '../../services/authService';
 
 const MemberForm = ({ member = null, onSubmit, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -61,48 +59,29 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
         setError('');
         setIsLoading(true);
         try {
-            let userId = formData.userId;
-            
-            // If creating new member and no userId, create user first
-            if (!member && !userId && formData.email) {
-                try {
-                    const userResponse = await authService.register({
-                        email: formData.email,
-                        // Password not needed - backend generates random password (OTP login is used)
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                        phone: formData.phone,
-                        role: 'member'
-                    });
-                    userId = userResponse.data?.data?.user?.id || userResponse.data?.user?.id;
-                } catch (userError) {
-                    // If user already exists, try to get by email
-                    if (userError.response?.status === 400) {
-                        setError('User with this email already exists. Please use existing user.');
-                        setIsLoading(false);
-                        return;
-                    }
-                    throw userError;
-                }
-            }
+            const payload = member 
+                ? {
+                    _id: member._id,
+                    userId: formData.userId,
+                    planId: formData.planId,
+                    subscriptionStart: formData.subscriptionStart,
+                    subscriptionEnd: formData.subscriptionEnd,
+                    status: formData.status
+                  }
+                : {
+                    email: formData.email,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phone: formData.phone,
+                    planId: formData.planId,
+                    subscriptionStart: formData.subscriptionStart,
+                    subscriptionEnd: formData.subscriptionEnd,
+                    status: formData.status
+                };
 
-            const memberData = {
-                userId: userId || formData.userId,
-                planId: formData.planId,
-                subscriptionStart: formData.subscriptionStart,
-                subscriptionEnd: formData.subscriptionEnd,
-                status: formData.status
-            };
-
-            if (member) {
-                // Update existing member
-                await memberService.updateMember(member._id, memberData);
-            }
-            
-            await onSubmit(member ? { ...memberData, _id: member._id } : memberData);
+            await onSubmit(payload);
         } catch (error) {
             setError(error.response?.data?.message || 'Failed to save member');
-            console.error('Error saving member:', error);
         } finally {
             setIsLoading(false);
         }
