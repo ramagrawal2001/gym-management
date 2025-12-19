@@ -243,7 +243,8 @@ export const createMember = async (req, res) => {
       });
     }
 
-    // Now, create the member record
+    // Create the member record
+    // Member ID is auto-generated using timestamp + random, so collisions are extremely rare
     const member = await Member.create({
       userId: user._id, // Use the definite user ID
       gymId,
@@ -265,6 +266,10 @@ export const createMember = async (req, res) => {
     // Catch duplicate email error from User model
     if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
       return sendError(res, 409, 'A user with this email already exists but could not be added.');
+    }
+    // Catch duplicate memberId error
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.memberId) {
+      return sendError(res, 409, 'A member with this ID already exists. Please try again.');
     }
     // Catch validation errors
     if (error.name === 'ValidationError') {

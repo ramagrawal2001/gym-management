@@ -9,6 +9,7 @@ import * as memberService from '../services/memberService';
 import { useNotification } from '../hooks/useNotification';
 import { formatDate } from '../utils/formatDate';
 import { useRole } from '../hooks/useRole';
+import { GENDER_OPTIONS } from '../utils/constants';
 
 const MemberProfile = () => {
     const { id } = useParams();
@@ -157,6 +158,14 @@ const MemberProfile = () => {
                                     <MapPin size={18} />
                                     <span className="text-sm">
                                         {[address.street, address.city, address.state, address.pincode].filter(Boolean).join(', ') || 'N/A'}
+                                    </span>
+                                </div>
+                            )}
+                            {member.gender && (
+                                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                    <Calendar size={18} />
+                                    <span className="text-sm">
+                                        Gender: {GENDER_OPTIONS.find(opt => opt.value === member.gender)?.label || member.gender}
                                     </span>
                                 </div>
                             )}

@@ -3,7 +3,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import ImageUpload from '../common/ImageUpload';
 import * as planService from '../../services/planService';
-import { BLOOD_GROUPS } from '../../utils/constants';
+import { BLOOD_GROUPS, GENDER_OPTIONS } from '../../utils/constants';
 
 const Section = ({ title, children }) => (
     <div className="py-6 border-b border-gray-200 dark:border-slate-700">
@@ -28,6 +28,7 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
         subscriptionEnd: '',
         status: 'active',
         bloodGroup: '',
+        gender: '',
         address: { street: '', city: '', state: '', pincode: '' },
         emergencyContact: { name: '', phone: '', relation: '' },
         medicalInfo: { conditions: '', medications: '', allergies: '' },
@@ -56,6 +57,7 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
                 subscriptionEnd: member.subscriptionEnd ? new Date(member.subscriptionEnd).toISOString().split('T')[0] : '',
                 status: member.status || 'active',
                 bloodGroup: member.bloodGroup || '',
+                gender: member.gender || '',
                 address: { ...{ street: '', city: '', state: '', pincode: '' }, ...member.address },
                 emergencyContact: { ...{ name: '', phone: '', relation: '' }, ...member.emergencyContact },
                 medicalInfo: {
@@ -173,6 +175,13 @@ const MemberForm = ({ member = null, onSubmit, onCancel }) => {
                 <Input label="Last Name" name="lastName" placeholder="Doe" value={formData.lastName} onChange={handleChange} required />
                 <Input label="Email Address" name="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} required />
                 <Input label="Phone Number" name="phone" type="tel" placeholder="+1 (555) 000-0000" value={formData.phone} onChange={handleChange} />
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
+                    <select name="gender" value={formData.gender} onChange={handleChange} className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                        <option value="">Select Gender</option>
+                        {GENDER_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood Group</label>
                     <select name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} className="block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white">
