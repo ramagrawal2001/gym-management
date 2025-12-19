@@ -44,7 +44,8 @@ const equipmentSchema = new mongoose.Schema({
   },
   serviceInterval: {
     type: Number, // in days
-    default: 90
+    default: 90,
+    min: [1, 'Service interval must be at least 1 day']
   },
   status: {
     type: String,
