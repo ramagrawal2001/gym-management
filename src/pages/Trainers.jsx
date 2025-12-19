@@ -88,10 +88,13 @@ const Trainers = () => {
         try {
             // Fetch full staff details
             const response = await staffService.getStaffMember(staffMember._id);
-            setSelectedStaff(response.data?.data || response.data);
+            const staffData = response.data?.data || response.data || staffMember;
+            setSelectedStaff(staffData);
             setIsModalOpen(true);
         } catch (error) {
-            showError('Failed to load staff details');
+            const errorMessage = error.response?.data?.message || 'Failed to load staff details';
+            showError(errorMessage);
+            console.error('Error loading staff:', error);
         }
     };
 

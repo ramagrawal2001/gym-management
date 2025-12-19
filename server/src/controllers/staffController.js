@@ -14,9 +14,26 @@ export const getStaff = async (req, res) => {
 
     const { page = 1, limit = 10, search, isActive } = req.query;
     const skip = (page - 1) * limit;
-    const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.gymId || req.user.gymId;
+    
+    // Handle gymId: super_admin can filter by gymId from query, others use their gymId
+    let gymId;
+    if (req.user.role === 'super_admin') {
+      gymId = req.query.gymId || null; // null means all gyms for super admin
+    } else {
+      // For non-super-admin, use gymId from middleware or user
+      gymId = req.gymId || (req.user.gymId ? (req.user.gymId._id || req.user.gymId) : null);
+      
+      if (!gymId) {
+        return sendError(res, 403, 'Access denied: User does not have a gym association');
+      }
+    }
 
-    const query = { gymId };
+    const query = {};
+    
+    // Only add gymId to query if it's specified (for non-super-admin or super-admin filtering)
+    if (gymId) {
+      query.gymId = gymId;
+    }
     
     if (isActive !== undefined) {
       query.isActive = isActive === 'true';
@@ -78,7 +95,22 @@ export const getStaffMember = async (req, res) => {
 
     // Verify gym scope for non-super-admin
     if (req.user.role !== 'super_admin') {
-      if (staff.gymId.toString() !== req.user.gymId.toString()) {
+      // Get user's gymId - handle both object and string formats
+      const userGymId = req.gymId || (req.user.gymId ? (req.user.gymId._id || req.user.gymId) : null);
+      
+      if (!userGymId) {
+        return sendError(res, 403, 'Access denied: User does not have a gym association');
+      }
+      
+      // Get staff's gymId - handle both object and string formats
+      const staffGymId = staff.gymId ? (staff.gymId._id || staff.gymId) : null;
+      
+      if (!staffGymId) {
+        return sendError(res, 500, 'Staff member has no gym association');
+      }
+      
+      // Compare as strings to avoid ObjectId comparison issues
+      if (staffGymId.toString() !== userGymId.toString()) {
         return sendError(res, 403, 'Access denied: Invalid gym scope');
       }
     }
@@ -139,7 +171,12 @@ export const createStaff = async (req, res) => {
       ...otherData 
     } = bodyData;
     
-    const gymId = req.gymId || req.user.gymId;
+    // Get gymId - handle both object and string formats
+    const gymId = req.gymId || (req.user.gymId ? (req.user.gymId._id || req.user.gymId) : null);
+    
+    if (!gymId) {
+      return sendError(res, 403, 'Access denied: User does not have a gym association');
+    }
 
     // --- BACKEND VALIDATION ---
     if (!email || !firstName || !lastName) {
@@ -263,7 +300,15 @@ export const updateStaff = async (req, res) => {
 
     // Verify gym scope for non-super-admin
     if (req.user.role !== 'super_admin') {
-      if (staff.gymId.toString() !== req.user.gymId.toString()) {
+      const userGymId = req.gymId || (req.user.gymId ? (req.user.gymId._id || req.user.gymId) : null);
+      
+      if (!userGymId) {
+        return sendError(res, 403, 'Access denied: User does not have a gym association');
+      }
+      
+      const staffGymId = staff.gymId ? (staff.gymId._id || staff.gymId) : null;
+      
+      if (!staffGymId || staffGymId.toString() !== userGymId.toString()) {
         return sendError(res, 403, 'Access denied: Invalid gym scope');
       }
     }
@@ -374,7 +419,15 @@ export const deleteStaff = async (req, res) => {
 
     // Verify gym scope for non-super-admin
     if (req.user.role !== 'super_admin') {
-      if (staff.gymId.toString() !== req.user.gymId.toString()) {
+      const userGymId = req.gymId || (req.user.gymId ? (req.user.gymId._id || req.user.gymId) : null);
+      
+      if (!userGymId) {
+        return sendError(res, 403, 'Access denied: User does not have a gym association');
+      }
+      
+      const staffGymId = staff.gymId ? (staff.gymId._id || staff.gymId) : null;
+      
+      if (!staffGymId || staffGymId.toString() !== userGymId.toString()) {
         return sendError(res, 403, 'Access denied: Invalid gym scope');
       }
     }

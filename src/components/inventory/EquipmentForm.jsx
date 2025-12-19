@@ -353,3 +353,4 @@ const EquipmentForm = ({ equipment = null, onSubmit, onCancel }) => {
 
 export default EquipmentForm;
 
+
