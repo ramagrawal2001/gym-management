@@ -29,6 +29,9 @@ export const ownerOrSuperAdmin = authorize('super_admin', 'owner');
 // Staff or above
 export const staffOrAbove = authorize('super_admin', 'owner', 'staff');
 
+// Owner only
+export const ownerOnly = authorize('super_admin', 'owner');
+
 // Member only
 export const memberOnly = authorize('member');
 

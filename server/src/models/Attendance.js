@@ -30,13 +30,54 @@ const attendanceSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+  // New fields for attendance system
+  method: {
+    type: String,
+    enum: ['qr', 'manual', 'nfc', 'biometric'],
+    default: 'manual'
+  },
+  // QR code used for check-in (if applicable)
+  qrCode: {
+    type: String,
+    trim: true
+  },
+  // Staff override tracking
+  staffOverride: {
+    isOverridden: {
+      type: Boolean,
+      default: false
+    },
+    staffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    reason: {
+      type: String,
+      trim: true
+    },
+    overriddenAt: {
+      type: Date
+    }
+  },
+  // Device/IP information for validation
+  deviceInfo: {
+    ipAddress: {
+      type: String
+    },
+    userAgent: {
+      type: String
+    },
+    deviceId: {
+      type: String
+    }
   }
 }, {
   timestamps: true
 });
 
 // Calculate duration before saving
-attendanceSchema.pre('save', function(next) {
+attendanceSchema.pre('save', function (next) {
   if (this.checkOut && this.checkIn) {
     this.duration = Math.round((this.checkOut - this.checkIn) / 1000 / 60);
     this.status = 'completed';
@@ -44,5 +85,12 @@ attendanceSchema.pre('save', function(next) {
   next();
 });
 
+// Indexes for efficient querying
+attendanceSchema.index({ gymId: 1, checkIn: -1 });
+attendanceSchema.index({ memberId: 1, checkIn: -1 });
+attendanceSchema.index({ gymId: 1, status: 1 });
+attendanceSchema.index({ qrCode: 1 });
+
 export default mongoose.model('Attendance', attendanceSchema);
+
 

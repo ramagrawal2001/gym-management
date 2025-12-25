@@ -22,6 +22,11 @@ const gymSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Plan'
   },
+  // Reference to attendance configuration
+  attendanceConfigId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AttendanceConfig'
+  },
   features: {
     crm: { type: Boolean, default: true },
     scheduling: { type: Boolean, default: true },

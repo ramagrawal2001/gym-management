@@ -44,7 +44,21 @@ export const API_ENDPOINTS = {
     TODAY: '/attendance/today',
     CHECKIN: '/attendance/checkin',
     CHECKOUT: (id) => `/attendance/checkout/${id}`,
-    MEMBER: (memberId) => `/attendance/member/${memberId}`
+    MEMBER: (memberId) => `/attendance/member/${memberId}`,
+    QR_CHECKIN: '/attendance/qr-checkin',
+    QR: (memberId) => `/attendance/qr/${memberId}`,
+    OVERRIDE: '/attendance/override',
+    OVERRIDE_LOGS: '/attendance/override-logs',
+    REPORTS: '/attendance/reports',
+    EXPORT: '/attendance/export',
+    IMPORT: '/attendance/import'
+  },
+  // Attendance Config
+  ATTENDANCE_CONFIG: {
+    BASE: '/attendance-config',
+    TOGGLE: '/attendance-config/toggle',
+    METHODS: '/attendance-config/methods',
+    BY_GYM: (gymId) => `/attendance-config/${gymId}`
   },
   // Invoices
   INVOICES: {
