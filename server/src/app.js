@@ -18,6 +18,9 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import staffRoutes from './routes/staffRoutes.js';
 import equipmentRoutes from './routes/equipmentRoutes.js';
+import subscriptionPlanRoutes from './routes/subscriptionPlanRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import { handleRazorpayWebhook } from './controllers/subscriptionController.js';
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +43,9 @@ app.get('/health', (req, res) => {
   res.json({ success: true, message: 'GymOS API is running' });
 });
 
+// Razorpay Webhook (must be before other routes - needs raw body)
+app.post('/api/v1/webhooks/razorpay', express.raw({ type: 'application/json' }), handleRazorpayWebhook);
+
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/gyms', gymRoutes);
@@ -52,6 +58,8 @@ app.use('/api/v1/invoices', invoiceRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/staff', staffRoutes);
 app.use('/api/v1/equipment', equipmentRoutes);
+app.use('/api/v1/subscription-plans', subscriptionPlanRoutes);
+app.use('/api/v1/subscriptions', subscriptionRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
@@ -60,7 +68,7 @@ app.use(errorHandler);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://globalprotechin_db_user:evJlNrZRFfCrXbjC@cluster0.ufhjyge.mongodb.net/gym')
   .then(() => {
     console.log('MongoDB Connected');
-    
+
     // Start server
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
