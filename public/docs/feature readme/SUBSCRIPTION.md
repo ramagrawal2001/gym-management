@@ -11,6 +11,10 @@ The subscription feature enables:
 - **Payment Links**: Shareable payment links for gyms to complete payments
 - **Dashboard Payment**: Gym owners can pay through their logged-in dashboard
 - **Payment Tracking**: Full history of payments, invoices, and subscription status
+- **Plan Upgrades/Downgrades**: With proration calculations
+- **Auto Expiry**: Automatic subscription expiry with grace period
+- **Access Guard**: Middleware to block access when subscription expires
+- **Audit Logging**: Complete audit trail of all subscription events
 
 ---
 
@@ -23,6 +27,8 @@ The subscription feature enables:
 3. Set custom price, duration, and feature limits
 4. Copy the generated payment link to share with gym owner
 5. Monitor payment status from the plans list
+6. Approve manual payments when needed
+7. View audit logs for subscription events
 
 ### Gym Owner Flow
 
@@ -65,6 +71,11 @@ The subscription feature enables:
 | GET | `/api/v1/subscriptions/payments` | Owner/Admin | Get payment history |
 | GET | `/api/v1/subscriptions/invoices` | Owner/Admin | Get invoices |
 | PUT | `/api/v1/subscriptions/:id/cancel` | Super Admin | Cancel subscription |
+| PUT | `/api/v1/subscriptions/:id/upgrade` | Owner/Admin | Upgrade plan |
+| PUT | `/api/v1/subscriptions/:id/downgrade` | Owner/Admin | Downgrade plan |
+| PUT | `/api/v1/subscriptions/invoices/:id/approve-manual` | Super Admin | Approve manual payment |
+| POST | `/api/v1/subscriptions/check-expiry` | Super Admin | Check expired subscriptions |
+| GET | `/api/v1/subscriptions/audit-logs` | Owner/Admin | Get audit logs |
 
 ### Webhooks
 
@@ -96,6 +107,18 @@ The subscription feature enables:
 | status | Enum | pending, trial, active, expired, cancelled |
 | startDate | Date | Subscription start |
 | endDate | Date | Subscription end |
+| pendingDowngrade | Object | Scheduled downgrade info |
+
+### SubscriptionAuditLog
+| Field | Type | Description |
+|-------|------|-------------|
+| subscriptionId | ObjectId | Reference to Subscription |
+| gymId | ObjectId | Reference to Gym |
+| action | Enum | Action type (created, upgraded, expired, etc.) |
+| description | String | Human-readable description |
+| previousState | Mixed | State before change |
+| newState | Mixed | State after change |
+| performedBy | ObjectId | User who performed action |
 
 ---
 
@@ -112,6 +135,54 @@ Each plan includes configurable limits:
 - **Staff**: Staff management
 - **Payments**: Payment processing
 - **Reports**: Analytics & reports
+
+---
+
+## Upgrade & Downgrade
+
+### Upgrade Plan
+- Immediate effect with proration credit
+- Days remaining on current plan calculated
+- Credit applied to new plan price
+- Gym features updated immediately
+
+### Downgrade Plan
+- Scheduled for end of current billing period
+- Or specify custom effective date
+- Features downgraded when effective
+
+### Proration Formula
+```
+daysRemaining = endDate - now
+dailyRate = currentPlanPrice / durationDays
+proratedCredit = daysRemaining × dailyRate
+amountDue = newPlanPrice - proratedCredit
+```
+
+---
+
+## Auto Expiry & Grace Period
+
+- **Grace Period**: 3 days after expiry
+- **Expiry Check**: Run via `POST /check-expiry` endpoint (use with cron)
+- **Status Flow**: `active` → `expired` after grace period
+- **Pending Downgrades**: Processed during expiry check
+
+---
+
+## Subscription Guard Middleware
+
+Block routes based on subscription status:
+
+```javascript
+import { requireActiveSubscription, requireFeature } from './middleware/subscriptionGuard.js';
+
+// Block if subscription expired
+router.get('/members', authenticate, requireActiveSubscription, getMembers);
+
+// Block if missing feature
+router.get('/crm', authenticate, requireFeature('crm'), getCRM);
+```
 
 ---
 
@@ -132,6 +203,16 @@ RAZORPAY_KEY_SECRET=xxxxx
 | Expiry | Any future date |
 | CVV | Any 3 digits |
 
+### Manual Payment Approval
+```bash
+PUT /api/v1/subscriptions/invoices/{invoiceId}/approve-manual
+{
+  "paymentMethod": "bank_transfer",
+  "transactionId": "TXN123",
+  "notes": "Cheque payment"
+}
+```
+
 ---
 
 ## File Structure
@@ -142,13 +223,16 @@ server/
 │   ├── SubscriptionPlan.js
 │   ├── Subscription.js
 │   ├── SubscriptionInvoice.js
-│   └── SubscriptionPayment.js
+│   ├── SubscriptionPayment.js
+│   └── SubscriptionAuditLog.js      # NEW
 ├── controllers/
 │   ├── subscriptionPlanController.js
 │   └── subscriptionController.js
 ├── routes/
 │   ├── subscriptionPlanRoutes.js
 │   └── subscriptionRoutes.js
+├── middleware/
+│   └── subscriptionGuard.js          # NEW
 └── services/
     └── razorpayService.js
 
@@ -171,3 +255,22 @@ src/
 | `/subscription-plans` | SubscriptionPlans | Super Admin |
 | `/my-subscription` | GymSubscription | Owner |
 | `/pay/:token` | PaymentLink | Public |
+
+---
+
+## Audit Log Actions
+
+| Action | Description |
+|--------|-------------|
+| `plan_created` | New plan created |
+| `plan_updated` | Plan details changed |
+| `subscription_created` | New subscription |
+| `subscription_activated` | Subscription activated |
+| `subscription_upgraded` | Plan upgraded |
+| `subscription_downgraded` | Downgrade scheduled |
+| `subscription_expired` | Subscription expired |
+| `subscription_cancelled` | Subscription cancelled |
+| `payment_initiated` | Payment order created |
+| `payment_completed` | Payment successful |
+| `payment_failed` | Payment failed |
+| `manual_payment_approved` | Manual payment approved |
