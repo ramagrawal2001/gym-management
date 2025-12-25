@@ -208,6 +208,17 @@ The system implements **gym-scoped data isolation**:
 - Member invoice view
 - Class bookings view
 
+#### 13. **Subscription & Billing** ✨ NEW
+- Custom subscription plans per gym
+- Razor pay payment integration
+- Gym-specific payment links (shareable)
+- Public checkout page for payments
+- Subscription status tracking (pending, active, expired)
+- Subscription invoices and payment history
+- Feature-based plans (member limits, branch limits, storage)
+- Monthly/Quarterly/Yearly plan durations
+- Trial period support
+
 ### Feature Toggles
 
 Each gym can enable/disable:

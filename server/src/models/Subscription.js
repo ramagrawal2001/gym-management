@@ -50,6 +50,17 @@ const subscriptionSchema = new mongoose.Schema({
     notes: {
         type: String,
         trim: true
+    },
+
+    // Pending downgrade (for scheduled downgrades)
+    pendingDowngrade: {
+        planId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'SubscriptionPlan'
+        },
+        effectiveDate: {
+            type: Date
+        }
     }
 }, {
     timestamps: true

@@ -21,10 +21,13 @@ This document provides a quick reference for the 110 planned features organized 
 
 ### 🔴 P1 Features (73 items)
 
-**Subscription & Billing** (23 features)
-- Complete subscription plan management system
-- Payment integration (Razorpay/Stripe)
-- Plan access guards and audit logs
+**Subscription & Billing** (23 features) ✅ **15 COMPLETED**
+- ✅ Complete subscription plan management system
+- ✅ Payment integration (Razorpay)
+- ✅ Custom pricing per gym
+- ✅ Gym-specific payment links
+- ✅ Public checkout page
+- ⬜ Plan access guards and audit logs
 
 **Attendance System** (7 features)
 - QR-based check-in
@@ -82,10 +85,10 @@ This document provides a quick reference for the 110 planned features organized 
 - Multiple attendance systems (QR/Manual/NFC/Biometric)
 - Single active attendance session
 
-**UI & UX** (3 features)
-- Light mode
-- Dark mode
-- Theme persistence
+**UI & UX** (3 features) ✅ **COMPLETED**
+- ✅ Light mode
+- ✅ Dark mode
+- ✅ Theme persistence
 
 ---
 
@@ -102,12 +105,12 @@ This document provides a quick reference for the 110 planned features organized 
 
 ## 8-Phase Implementation Roadmap
 
-### Phase 1: Foundation & Core Infrastructure (Weeks 1-4)
+### Phase 1: Foundation & Core Infrastructure (Weeks 1-4) ✅ **IN PROGRESS**
 **Focus**: Subscription system and member access control
-- Subscription plan management
-- Payment integration (Razorpay/Stripe)
-- Member access control
-- Dynamic settings panel
+- ✅ Subscription plan management
+- ✅ Payment integration (Razorpay)
+- ⬜ Member access control
+- ⬜ Dynamic settings panel
 
 ### Phase 2: Attendance & Validation (Weeks 5-8)
 **Focus**: Complete attendance system
@@ -289,4 +292,4 @@ This document provides a quick reference for the 110 planned features organized 
 
 **Document Created**: December 25, 2024
 **Last Updated**: December 25, 2024
-**Status**: Planning Phase
+**Status**: Phase 1 - In Progress (Subscription & Billing Complete)
