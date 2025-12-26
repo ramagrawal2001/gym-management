@@ -8,6 +8,9 @@ import notificationReducer from './slices/notificationSlice';
 import memberReducer from './slices/memberSlice';
 import leadReducer from './slices/leadSlice';
 import uiReducer from './slices/uiSlice';
+import expenseReducer from './slices/expenseSlice';
+import revenueReducer from './slices/revenueSlice';
+import financialReportReducer from './slices/financialReportSlice';
 
 // Persist configuration for auth slice
 const authPersistConfig = {
@@ -33,7 +36,10 @@ const rootReducer = combineReducers({
   notifications: notificationReducer,
   members: memberReducer,
   leads: leadReducer,
-  ui: uiReducer
+  ui: uiReducer,
+  expenses: expenseReducer,
+  revenues: revenueReducer,
+  financialReports: financialReportReducer
 });
 
 export const store = configureStore({

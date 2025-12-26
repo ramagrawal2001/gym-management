@@ -34,7 +34,8 @@ const gymSchema = new mongoose.Schema({
     inventory: { type: Boolean, default: true },
     staff: { type: Boolean, default: true },
     payments: { type: Boolean, default: true },
-    reports: { type: Boolean, default: true }
+    reports: { type: Boolean, default: true },
+    financial: { type: Boolean, default: true }
   },
   branding: {
     logo: { type: String },

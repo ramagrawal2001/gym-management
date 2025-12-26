@@ -26,6 +26,9 @@ import GymDetails from './pages/GymDetails';
 import SubscriptionPlans from './pages/SubscriptionPlans';
 import GymSubscription from './pages/GymSubscription';
 import PaymentLink from './pages/PaymentLink';
+import Expenses from './pages/Expenses';
+import Revenue from './pages/Revenue';
+import FinancialReports from './pages/FinancialReports';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
@@ -203,6 +206,42 @@ function AppRoutes() {
                         <RoleGuard allowedRoles={['owner', 'staff']}>
                             <FeatureGuard feature="inventory">
                                 <Inventory />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Expenses - Owner and Super Admin only, requires financial feature */}
+                <Route
+                    path="expenses"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FeatureGuard feature="financial">
+                                <Expenses />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Revenue - Owner and Super Admin only, requires financial feature */}
+                <Route
+                    path="revenue"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FeatureGuard feature="financial">
+                                <Revenue />
+                            </FeatureGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Financial Reports - Owner and Super Admin only, requires financial feature */}
+                <Route
+                    path="financial-reports"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FeatureGuard feature="financial">
+                                <FinancialReports />
                             </FeatureGuard>
                         </RoleGuard>
                     }

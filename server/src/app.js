@@ -22,6 +22,10 @@ import subscriptionPlanRoutes from './routes/subscriptionPlanRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import attendanceConfigRoutes from './routes/attendanceConfigRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import expenseRoutes from './routes/expenseRoutes.js';
+import expenseCategoryRoutes from './routes/expenseCategoryRoutes.js';
+import revenueRoutes from './routes/revenueRoutes.js';
+import financialReportRoutes from './routes/financialReportRoutes.js';
 import { handleRazorpayWebhook } from './controllers/subscriptionController.js';
 
 // Load environment variables
@@ -64,6 +68,10 @@ app.use('/api/v1/subscription-plans', subscriptionPlanRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
 app.use('/api/v1/attendance-config', attendanceConfigRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/expenses', expenseRoutes);
+app.use('/api/v1/expense-categories', expenseCategoryRoutes);
+app.use('/api/v1/revenues', revenueRoutes);
+app.use('/api/v1/financial-reports', financialReportRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

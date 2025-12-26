@@ -9,7 +9,10 @@ import {
     Settings,
     LogOut,
     Building2,
-    Receipt
+    Receipt,
+    DollarSign,
+    TrendingUp,
+    PieChart
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRole } from '../hooks/useRole';
@@ -48,6 +51,9 @@ const Sidebar = () => {
         { icon: CalendarCheck, label: 'Attendance', path: '/attendance', feature: 'attendance', roles: ['owner', 'staff'] },
         { icon: Dumbbell, label: 'Trainers', path: '/trainers', feature: 'staff', roles: ['super_admin', 'owner', 'staff'] },
         { icon: Package, label: 'Inventory', path: '/inventory', feature: 'inventory', roles: ['owner', 'staff'] },
+        { icon: DollarSign, label: 'Expenses', path: '/expenses', feature: 'financial', roles: ['super_admin', 'owner'] },
+        { icon: TrendingUp, label: 'Revenue', path: '/revenue', feature: 'financial', roles: ['super_admin', 'owner'] },
+        { icon: PieChart, label: 'Financial Reports', path: '/financial-reports', feature: 'financial', roles: ['super_admin', 'owner'] },
         { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'] },
 
         // Member specific (these will be added later when member pages are created)

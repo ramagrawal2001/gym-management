@@ -174,14 +174,37 @@ The system implements **gym-scoped data isolation**:
 - Notification templates with variable substitution
 - Notification manager for admin control
 
-#### 8. **Financial Management**
-- Membership plan creation (monthly, quarterly, yearly)
-- Invoice generation with items
-- Tax and discount support
-- Payment tracking (cash, card, bank transfer, online)
-- Payment status management
-- Invoice status tracking (draft, pending, paid, overdue, cancelled)
-- Transaction ID tracking
+#### 8. **Financial Management** ✨ ENHANCED
+- **Expense Tracking**:
+  - Create, edit, and delete expenses with categories
+  - Custom expense categories with icons and colors
+  - Expense approval workflow (pending → approved/rejected)
+  - Filter by date, category, status, vendor
+  - Receipt URL attachment support
+  - Export expenses to CSV
+  - Import expenses from JSON
+  - Soft delete for audit trail
+- **Revenue Management**:
+  - Track revenue from multiple sources (POS, personal training, merchandise, classes)
+  - Automatic membership payment tracking
+  - Link revenue to payments and members
+  - Revenue statistics by source
+  - Date range filtering
+- **Profit & Loss Reports**:
+  - Comprehensive P&L calculations (income - expenses = profit)
+  - Visual trend charts (Revenue vs Expenses)
+  - Category breakdown with pie charts
+  - Daily/weekly/monthly period grouping
+  - Profit margin percentage
+  - Dashboard financial summary widget
+- **Legacy Features**:
+  - Membership plan creation (monthly, quarterly, yearly)
+  - Invoice generation with items
+  - Tax and discount support
+  - Payment tracking (cash, card, bank transfer, online)
+  - Payment status management
+  - Invoice status tracking (draft, pending, paid, overdue, cancelled)
+  - Transaction ID tracking
 
 #### 8. **Staff Management**
 - Staff CRUD operations
@@ -239,6 +262,7 @@ Each gym can enable/disable:
 - **Staff** - Staff management
 - **Payments** - Payment and invoice management
 - **Reports** - Analytics and reporting
+- **Financial** - Expense & revenue management with P&L reports ✨ NEW
 
 ---
 
@@ -756,6 +780,54 @@ http://localhost:3001/api/v1
 | PUT | `/plans/:id` | Update plan | Yes (owner) |
 | DELETE | `/plans/:id` | Delete plan | Yes (owner) |
 
+### Expense & Revenue Endpoints ✨ NEW
+
+#### Expense Categories
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/expense-categories` | List categories | Yes (owner, staff) |
+| GET | `/expense-categories/:id` | Get category | Yes (owner, staff) |
+| POST | `/expense-categories` | Create category | Yes (owner) |
+| PUT | `/expense-categories/:id` | Update category | Yes (owner) |
+| DELETE | `/expense-categories/:id` | Delete category | Yes (owner) |
+
+#### Expenses
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/expenses` | List expenses (with filters) | Yes (owner, staff) |
+| GET | `/expenses/:id` | Get expense | Yes (owner, staff) |
+| POST | `/expenses` | Create expense | Yes (owner, staff) |
+| PUT | `/expenses/:id` | Update expense | Yes (owner, staff) |
+| DELETE | `/expenses/:id` | Soft delete expense | Yes (owner) |
+| POST | `/expenses/:id/approve` | Approve expense | Yes (owner) |
+| POST | `/expenses/:id/reject` | Reject expense | Yes (owner) |
+| GET | `/expenses/stats` | Get expense statistics | Yes (owner) |
+| GET | `/expenses/export` | Export to CSV | Yes (owner) |
+| POST | `/expenses/import` | Import from JSON | Yes (owner) |
+
+#### Revenues
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/revenues` | List revenues (with filters) | Yes (owner, staff) |
+| GET | `/revenues/:id` | Get revenue | Yes (owner, staff) |
+| POST | `/revenues` | Create revenue | Yes (owner, staff) |
+| PUT | `/revenues/:id` | Update revenue | Yes (owner, staff) |
+| DELETE | `/revenues/:id` | Soft delete revenue | Yes (owner) |
+| GET | `/revenues/stats` | Get revenue statistics | Yes (owner) |
+
+#### Financial Reports
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/financial-reports/profit-loss` | P&L report | Yes (owner) |
+| GET | `/financial-reports/expense-trends` | Expense trends | Yes (owner) |
+| GET | `/financial-reports/revenue-trends` | Revenue trends | Yes (owner) |
+| GET | `/financial-reports/category-breakdown` | Category breakdown | Yes (owner) |
+| GET | `/financial-reports/summary` | Financial summary | Yes (owner) |
+
 ---
 
 ## 🔐 Authentication & Authorization
@@ -790,7 +862,7 @@ The system uses **OTP-based authentication** (password-based login has been remo
 - Features can be toggled per gym
 - Frontend: `FeatureGuard.jsx` component
 - Backend: `featureGuard.js` middleware
-- Features: CRM, Scheduling, Attendance, Inventory, Staff, Payments, Reports
+- Features: CRM, Scheduling, Attendance, Inventory, Staff, Payments, Reports, Financial ✨ NEW
 
 ### Multi-Tenant Data Isolation
 
@@ -897,14 +969,56 @@ The system uses **OTP-based authentication** (password-based login has been remo
 - `timestamps`
 
 ### Equipment Model
-- `name`, `description`
+- `name` (required)
 - `category` (cardio, strength, functional, accessories)
-- `brand`, `model`, `serialNumber`
+- `manufacturer`, `model`, `serialNumber`
 - `purchaseDate`, `purchasePrice`
-- `condition` (excellent, good, fair, poor, needs_repair)
-- `status` (operational, maintenance_due, out_of_order, retired)
-- `gymId` (required)
+- `warrantyExpiry`
+- `location`, `condition`, `status`
+- `notes`
 - `serviceHistory` (array of service records)
+- `gymId` (required)
+- `timestamps`
+
+### ExpenseCategory Model ✨ NEW
+- `name` (required)
+- `description`
+- `icon` (emoji)
+- `color` (hex code)
+- `gymId` (required)
+- `isDefault` (boolean)
+- `isActive` (boolean)
+- `timestamps`
+
+### Expense Model ✨ NEW
+- `amount` (required, number)
+- `categoryId` (required, ref to ExpenseCategory)
+- `description` (required)
+- `expenseDate` (required, date)
+- `paymentMethod` (cash, card, bank_transfer, online, check, other)
+- `vendor`
+- `receiptUrl`
+- `notes`
+- `gymId` (required)
+- `createdBy` (required, ref to User)
+- `approvalStatus` (pending, approved, rejected)
+- `approvedBy` (ref to User)
+- `approvalNotes`
+- `approvedAt` (date)
+- `isDeleted` (boolean, soft delete)
+- `timestamps`
+
+### Revenue Model ✨ NEW
+- `amount` (required, number)
+- `source` (membership, pos_sale, personal_training, merchandise, classes, other)
+- `description` (required)
+- `revenueDate` (required, date)
+- `notes`
+- `gymId` (required)
+- `paymentId` (optional, ref to Payment)
+- `memberId` (optional, ref to Member)
+- `createdBy` (required, ref to User)
+- `isDeleted` (boolean, soft delete)
 - `timestamps`
 
 ### OTP Model

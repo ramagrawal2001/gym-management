@@ -48,12 +48,12 @@ Quick reference checklist for tracking implementation progress.
 - [x] Notification manager
 
 ### Expense & Revenue Manager (6 features)
-- [ ] Expense tracking
-- [ ] Expense categories
-- [ ] Revenue tracking
-- [ ] Profit & loss report
-- [ ] Expense import/export
-- [ ] Expense approval workflow
+- [x] Expense tracking
+- [x] Expense categories
+- [x] Revenue tracking
+- [x] Profit & loss report
+- [x] Expense import/export
+- [x] Expense approval workflow
 
 ### Member Access Control (3 features)
 - [ ] Member login access control
