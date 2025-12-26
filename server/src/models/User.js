@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   gymId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Gym',
-    required: function() {
+    required: function () {
       return this.role !== 'super_admin';
     }
   },
@@ -50,20 +50,42 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+
+  // Member Access Control fields
+  canLogin: {
+    type: Boolean,
+    default: true
+  },
+  memberPermissionLevel: {
+    type: String,
+    enum: ['basic', 'premium', 'vip'],
+    default: 'premium'
+  },
+  accessRestrictions: {
+    viewProfile: { type: Boolean, default: null },
+    editProfile: { type: Boolean, default: null },
+    viewAttendance: { type: Boolean, default: null },
+    viewClasses: { type: Boolean, default: null },
+    bookClasses: { type: Boolean, default: null },
+    viewPayments: { type: Boolean, default: null },
+    viewInvoices: { type: Boolean, default: null },
+    viewWorkoutPlan: { type: Boolean, default: null },
+    viewDietPlan: { type: Boolean, default: null }
   }
 }, {
   timestamps: true
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

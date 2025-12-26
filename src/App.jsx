@@ -29,9 +29,14 @@ import PaymentLink from './pages/PaymentLink';
 import Expenses from './pages/Expenses';
 import Revenue from './pages/Revenue';
 import FinancialReports from './pages/FinancialReports';
+import Support from './pages/Support';
+import MemberAccessSettings from './pages/MemberAccessSettings';
+import SupportTickets from './pages/SupportTickets';
+import FAQManagement from './pages/FAQManagement';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
+import { Toaster } from 'react-hot-toast';
 
 function AppRoutes() {
     const dispatch = useDispatch();
@@ -256,6 +261,39 @@ function AppRoutes() {
                         </RoleGuard>
                     }
                 />
+
+                {/* Support - All authenticated users */}
+                <Route path="support" element={<Support />} />
+
+                {/* Support Tickets Admin - Owner and Staff */}
+                <Route
+                    path="support-tickets"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
+                            <SupportTickets />
+                        </RoleGuard>
+                    }
+                />
+
+                {/* FAQ Management - Owner only */}
+                <Route
+                    path="faq-management"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FAQManagement />
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Member Access Settings - Owner only */}
+                <Route
+                    path="member-access"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <MemberAccessSettings />
+                        </RoleGuard>
+                    }
+                />
             </Route>
 
             <Route path="*" element={<NotFound />} />
@@ -268,6 +306,30 @@ function App() {
         <ThemeProvider>
             <Router>
                 <AppRoutes />
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
+                        duration: 3000,
+                        style: {
+                            background: '#363636',
+                            color: '#fff',
+                        },
+                        success: {
+                            duration: 3000,
+                            iconTheme: {
+                                primary: '#4ade80',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            duration: 4000,
+                            iconTheme: {
+                                primary: '#ef4444',
+                                secondary: '#fff',
+                            },
+                        },
+                    }}
+                />
             </Router>
         </ThemeProvider>
     );

@@ -252,6 +252,25 @@ The system implements **gym-scoped data isolation**:
 - Monthly/Quarterly/Yearly plan durations
 - Trial period support
 
+#### 14. **Member Access Control** ✨ NEW
+- Member login enable/disable by gym owner
+- Feature-based member portal access (customizable permissions)
+- Three permission levels: Basic, Premium, VIP
+- Individual member access overrides
+- Granular control over 9 member portal features
+- Hierarchical permission system (individual → level → gym defaults)
+
+#### 15. **Help & Support** ✨ NEW
+- Support ticket system for member inquiries
+- Ticket categories, priorities, and status tracking
+- Ticket assignment to staff members
+- Reply system with conversation threading
+- FAQ knowledge base with search and categories
+- FAQ rating system (helpful/not helpful)
+- Global and gym-specific FAQs
+- Admin FAQ management interface
+- Support ticket statistics dashboard
+
 ### Feature Toggles
 
 Each gym can enable/disable:

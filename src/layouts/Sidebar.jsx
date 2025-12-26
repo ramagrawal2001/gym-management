@@ -12,7 +12,11 @@ import {
     Receipt,
     DollarSign,
     TrendingUp,
-    PieChart
+    PieChart,
+    HelpCircle,
+    MessageCircle,
+    FileQuestion,
+    Shield
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRole } from '../hooks/useRole';
@@ -54,6 +58,16 @@ const Sidebar = () => {
         { icon: DollarSign, label: 'Expenses', path: '/expenses', feature: 'financial', roles: ['super_admin', 'owner'] },
         { icon: TrendingUp, label: 'Revenue', path: '/revenue', feature: 'financial', roles: ['super_admin', 'owner'] },
         { icon: PieChart, label: 'Financial Reports', path: '/financial-reports', feature: 'financial', roles: ['super_admin', 'owner'] },
+
+        // Support & Help (All authenticated users)
+        { icon: HelpCircle, label: 'Support', path: '/support', roles: ['super_admin', 'owner', 'staff', 'member'] },
+
+        // Support Admin (Staff and Owner)
+        { icon: MessageCircle, label: 'Support Tickets', path: '/support-tickets', roles: ['super_admin', 'owner', 'staff'] },
+
+        // Settings & Management (Owner only)
+        { icon: Shield, label: 'Member Access', path: '/member-access', roles: ['super_admin', 'owner'] },
+        { icon: FileQuestion, label: 'FAQ Management', path: '/faq-management', roles: ['super_admin', 'owner'] },
         { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'] },
 
         // Member specific (these will be added later when member pages are created)
