@@ -164,7 +164,17 @@ The system implements **gym-scoped data isolation**:
 - Member attendance history
 - Attendance status (active, completed)
 
-#### 7. **Financial Management**
+#### 7. **Notification System** ✨ NEW
+- Email notifications (Gmail SMTP - FREE)
+- In-app notifications with bell icon
+- Real-time unread badges
+- Read/unread tracking
+- SMS support (architected for Fast2SMS)
+- WhatsApp support (planned for future)
+- Notification templates with variable substitution
+- Notification manager for admin control
+
+#### 8. **Financial Management**
 - Membership plan creation (monthly, quarterly, yearly)
 - Invoice generation with items
 - Tax and discount support
@@ -297,8 +307,12 @@ jymManagement/
 │   │   │   ├── Lead.js             # Lead/CRM model
 │   │   │   ├── Class.js            # Class/schedule model
 │   │   │   ├── Attendance.js       # Attendance tracking model
+│   │   │   ├── AttendanceConfig.js # Attendance configuration model
 │   │   │   ├── Invoice.js          # Invoice model
 │   │   │   ├── Payment.js          # Payment model
+│   │   │   ├── Notification.js     # Notification model (in-app)
+│   │   │   ├── NotificationTemplate.js # Notification templates
+│   │   │   ├── NotificationSettings.js # Gym notification config
 │   │   │   ├── Staff.js            # Staff model
 │   │   │   ├── Equipment.js        # Equipment/inventory model
 │   │   │   └── Otp.js              # OTP model for authentication
@@ -313,6 +327,7 @@ jymManagement/
 │   │   │   ├── attendanceController.js # Attendance tracking
 │   │   │   ├── invoiceController.js    # Invoice management
 │   │   │   ├── paymentController.js    # Payment management
+│   │   │   ├── notificationController.js # Notification management
 │   │   │   ├── staffController.js      # Staff management
 │   │   │   └── equipmentController.js  # Equipment management
 │   │   │
@@ -326,6 +341,7 @@ jymManagement/
 │   │   │   ├── attendanceRoutes.js # /api/v1/attendance
 │   │   │   ├── invoiceRoutes.js    # /api/v1/invoices
 │   │   │   ├── paymentRoutes.js    # /api/v1/payments
+│   │   │   ├── notificationRoutes.js # /api/v1/notifications
 │   │   │   ├── staffRoutes.js      # /api/v1/staff
 │   │   │   └── equipmentRoutes.js  # /api/v1/equipment
 │   │   │
@@ -339,7 +355,10 @@ jymManagement/
 │   │   │   └── upload.js            # File upload handling
 │   │   │
 │   │   ├── services/               # Business Logic Services
-│   │   │   ├── emailService.js     # Email sending (OTP)
+│   │   │   ├── emailService.js     # Email sending (OTP + notifications)
+│   │   │   ├── smsService.js       # SMS sending (Fast2SMS)
+│   │   │   ├── notificationService.js # Notification orchestrator
+│   │   │   ├── inAppNotificationService.js # In-app notifications
 │   │   │   ├── invoiceService.js   # Invoice generation logic
 │   │   │   └── uploadService.js    # File upload service
 │   │   │

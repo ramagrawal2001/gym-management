@@ -41,11 +41,11 @@ Quick reference checklist for tracking implementation progress.
 - [x] Staff override logs
 
 ### Notifications System (5 features)
-- [ ] Email notifications
+- [x] Email notifications
 - [ ] SMS notifications
 - [ ] WhatsApp notifications
-- [ ] In-app notifications
-- [ ] Notification manager
+- [x] In-app notifications
+- [x] Notification manager
 
 ### Expense & Revenue Manager (6 features)
 - [ ] Expense tracking
@@ -189,12 +189,12 @@ Quick reference checklist for tracking implementation progress.
 
 | Priority | Count | Completed | Status |
 |----------|-------|-----------|--------|
-| P1 (Critical) | 73 | 22 | 30% |
+| P1 (Critical) | 73 | 25 | 34% |
 | P2 (High) | 5 | 3 | 60% |
 | P3 (Medium) | 3 | 0 | 0% |
 | Reports & Analytics | 30 | 0 | 0% |
 | Promotions | 9 | 0 | 0% |
-| **TOTAL** | **120** | **25** | **21%** |
+| **TOTAL** | **120** | **28** | **23%** |
 
 ---
 
