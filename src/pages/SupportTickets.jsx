@@ -138,7 +138,7 @@ export default function SupportTickets() {
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
                         <option value="">All Status</option>
                         <option value="open">Open</option>
@@ -151,7 +151,7 @@ export default function SupportTickets() {
                     <select
                         value={filterPriority}
                         onChange={(e) => setFilterPriority(e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
                         <option value="">All Priorities</option>
                         <option value="low">Low</option>

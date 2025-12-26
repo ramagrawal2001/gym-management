@@ -179,42 +179,42 @@ export default function FAQManagement() {
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
-                        <h2 className="text-xl font-bold mb-4">
+                        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                             {editingFAQ ? 'Edit FAQ' : 'Create New FAQ'}
                         </h2>
                         <form onSubmit={handleSubmit}>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Question *</label>
+                                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Question *</label>
                                     <input
                                         type="text"
                                         required
                                         value={formData.question}
                                         onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                         placeholder="What is your question?"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Answer *</label>
+                                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Answer *</label>
                                     <textarea
                                         required
                                         rows={5}
                                         value={formData.answer}
                                         onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                         placeholder="Provide a detailed answer..."
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium mb-2">Category</label>
+                                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Category</label>
                                         <select
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                         >
                                             {categories.map((cat) => (
                                                 <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -223,12 +223,12 @@ export default function FAQManagement() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium mb-2">Order</label>
+                                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Order</label>
                                         <input
                                             type="number"
                                             value={formData.order}
                                             onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                         />
                                     </div>
 
@@ -240,7 +240,7 @@ export default function FAQManagement() {
                                                 onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
                                                 className="w-4 h-4 text-blue-600 rounded"
                                             />
-                                            <span className="text-sm">Global FAQ</span>
+                                            <span className="text-sm text-gray-700 dark:text-gray-300">Global FAQ</span>
                                         </label>
                                     </div>
                                 </div>
@@ -253,7 +253,7 @@ export default function FAQManagement() {
                                         setShowModal(false);
                                         setEditingFAQ(null);
                                     }}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                                 >
                                     Cancel
                                 </button>

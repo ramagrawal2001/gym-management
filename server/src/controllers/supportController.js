@@ -1,5 +1,6 @@
 import SupportTicket from '../models/SupportTicket.js';
 import User from '../models/User.js';
+import mongoose from 'mongoose';
 
 // Create a new support ticket
 export const createTicket = async (req, res) => {
@@ -318,7 +319,7 @@ export const getTicketStats = async (req, res) => {
         const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
 
         const stats = await SupportTicket.aggregate([
-            { $match: { gymId: mongoose.Types.ObjectId(gymId) } },
+            { $match: { gymId: new mongoose.Types.ObjectId(gymId) } },
             {
                 $group: {
                     _id: '$status',
