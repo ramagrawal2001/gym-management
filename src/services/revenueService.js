@@ -37,6 +37,12 @@ export const revenueService = {
     getStats: async (params = {}) => {
         const response = await apiClient.get(`${BASE_URL}/stats`, { params });
         return response.data;
+    },
+
+    // Get expected revenue (NEW)
+    getExpected: async (params = {}) => {
+        const response = await apiClient.get(`${BASE_URL}/expected`, { params });
+        return response.data;
     }
 };
 

@@ -5,7 +5,8 @@ import {
     createRevenue,
     updateRevenue,
     deleteRevenue,
-    getRevenueStats
+    getRevenueStats,
+    getExpectedRevenue
 } from '../controllers/revenueController.js';
 import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
@@ -20,6 +21,7 @@ router.use(enforceGymScope);
 
 // Stats route (before :id routes)
 router.get('/stats', ownerOrSuperAdmin, getRevenueStats);
+router.get('/expected', ownerOrSuperAdmin, getExpectedRevenue);
 
 // CRUD routes
 router.get('/', staffOrAbove, getRevenues);

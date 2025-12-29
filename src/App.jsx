@@ -33,6 +33,7 @@ import Support from './pages/Support';
 import MemberAccessSettings from './pages/MemberAccessSettings';
 import SupportTickets from './pages/SupportTickets';
 import FAQManagement from './pages/FAQManagement';
+import RevenueSources from './pages/settings/RevenueSources';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
@@ -258,6 +259,18 @@ function AppRoutes() {
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
                             <Settings />
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Revenue Sources - Owner and Super Admin only, requires financial feature */}
+                <Route
+                    path="revenue-sources"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <FeatureGuard feature="financial">
+                                <RevenueSources />
+                            </FeatureGuard>
                         </RoleGuard>
                     }
                 />
