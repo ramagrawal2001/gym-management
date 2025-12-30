@@ -18,15 +18,7 @@ const GymForm = ({ gym = null, onSubmit, onCancel }) => {
         name: '',
         subdomain: '',
         ownerEmail: '',
-        planId: '',
-        features: {
-            crm: true,
-            scheduling: true,
-            payments: true,
-            attendance: true,
-            staff: true,
-            inventory: true
-        }
+        planId: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -37,36 +29,17 @@ const GymForm = ({ gym = null, onSubmit, onCancel }) => {
                 name: gym.name || '',
                 subdomain: gym.subdomain || '',
                 ownerEmail: gym.ownerId?.email || '',
-                planId: gym.planId?._id || gym.planId || '',
-                features: gym.features || {
-                    crm: true,
-                    scheduling: true,
-                    payments: true,
-                    attendance: true,
-                    staff: true,
-                    inventory: true
-                }
+                planId: gym.planId?._id || gym.planId || ''
             });
         }
     }, [gym]);
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        if (name.startsWith('feature.')) {
-            const featureName = name.split('.')[1];
-            setFormData({
-                ...formData,
-                features: {
-                    ...formData.features,
-                    [featureName]: checked
-                }
-            });
-        } else {
-            setFormData({
-                ...formData,
-                [name]: value
-            });
-        }
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value
+        });
         setError('');
     };
 
@@ -122,28 +95,6 @@ const GymForm = ({ gym = null, onSubmit, onCancel }) => {
                 helperText={gym ? "Owner cannot be changed after creation" : "User will be created if doesn't exist"}
             />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Features
-                </label>
-                <div className="space-y-2 bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
-                    {Object.entries(formData.features).map(([key, value]) => (
-                        <label key={key} className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name={`feature.${key}`}
-                                checked={value}
-                                onChange={handleChange}
-                                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-slate-700"
-                            />
-                            <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 capitalize">
-                                {key.replace(/_/g, ' ')}
-                            </span>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <Button variant="ghost" onClick={onCancel} type="button" disabled={isLoading}>
                     Cancel
@@ -175,8 +126,8 @@ const Gyms = () => {
     const loadGyms = async () => {
         setIsLoading(true);
         try {
-            const response = await gymService.getGyms({ 
-                page: 1, 
+            const response = await gymService.getGyms({
+                page: 1,
                 limit: 100,
                 search: debouncedSearch || undefined
             });
