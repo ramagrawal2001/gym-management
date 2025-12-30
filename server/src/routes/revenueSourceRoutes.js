@@ -11,11 +11,13 @@ import {
 import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
 import { ownerOrSuperAdmin } from '../middleware/rbac.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 // All routes require authentication and gym scope
 router.use(authenticate);
+router.use(requireActiveSubscription);
 router.use(enforceGymScope);
 
 // GET /api/v1/revenue-sources - Get all sources

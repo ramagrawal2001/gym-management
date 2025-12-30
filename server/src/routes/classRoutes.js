@@ -4,10 +4,12 @@ import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope, enforceMemberScope } from '../middleware/gymScope.js';
 import { staffOrAbove, ownerOrSuperAdmin, memberOnly } from '../middleware/rbac.js';
 import { checkFeature } from '../middleware/featureGuard.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 router.use(checkFeature('scheduling'));
 
 // Member-specific routes (before enforceGymScope)

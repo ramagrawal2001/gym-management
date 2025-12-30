@@ -1,6 +1,7 @@
 import express from 'express';
 import { optionalAuthenticate, authenticate } from '../middleware/auth.js';
 import { authorize } from '../middleware/rbac.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 import {
     getFAQs,
     getFAQById,
@@ -21,9 +22,9 @@ router.get('/:id', getFAQById);
 // Rating FAQ (authenticated users)
 router.post('/:id/rate', authenticate, rateFAQ);
 
-// Admin routes (owner/super_admin only)
-router.post('/', authenticate, authorize('super_admin', 'owner'), createFAQ);
-router.put('/:id', authenticate, authorize('super_admin', 'owner'), updateFAQ);
-router.delete('/:id', authenticate, authorize('super_admin', 'owner'), deleteFAQ);
+// Admin routes (owner/super_admin only) - require subscription
+router.post('/', authenticate, requireActiveSubscription, authorize('super_admin', 'owner'), createFAQ);
+router.put('/:id', authenticate, requireActiveSubscription, authorize('super_admin', 'owner'), updateFAQ);
+router.delete('/:id', authenticate, requireActiveSubscription, authorize('super_admin', 'owner'), deleteFAQ);
 
 export default router;

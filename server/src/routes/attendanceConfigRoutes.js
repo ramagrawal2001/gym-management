@@ -3,10 +3,12 @@ import { getConfig, updateConfig, assignMethods, toggleAttendance, getConfigByGy
 import { authenticate } from '../middleware/auth.js';
 import { ownerOnly, superAdminOnly } from '../middleware/rbac.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 
 // Owner/Staff routes
 router.get('/', enforceGymScope, getConfig);

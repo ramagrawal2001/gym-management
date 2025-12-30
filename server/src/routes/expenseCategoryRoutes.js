@@ -10,10 +10,12 @@ import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
 import { ownerOrSuperAdmin } from '../middleware/rbac.js';
 import { checkFeature } from '../middleware/featureGuard.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 router.use(checkFeature('financial'));
 router.use(enforceGymScope);
 

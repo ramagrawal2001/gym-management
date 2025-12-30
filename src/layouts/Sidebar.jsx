@@ -22,6 +22,7 @@ import { clsx } from 'clsx';
 import { useRole } from '../hooks/useRole';
 import { useFeature } from '../hooks/useFeature';
 import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
 
 const Sidebar = () => {
     const location = useLocation();
@@ -29,6 +30,7 @@ const Sidebar = () => {
     const { hasRole, isSuperAdmin } = useRole();
     const { hasFeature } = useFeature();
     const { logout, user } = useAuth();
+    const { hasActiveSubscription } = useSubscription();
 
     const handleLogout = () => {
         logout();
@@ -36,47 +38,44 @@ const Sidebar = () => {
     };
 
     const menuItems = [
-        // Dashboard - All roles
+        // Dashboard - All roles (no subscription required)
         { icon: LayoutDashboard, label: 'Dashboard', path: '/', roles: ['super_admin', 'owner', 'staff', 'member'] },
 
-        // Super Admin only
+        // Super Admin only (no subscription required)
         { icon: Building2, label: 'Gyms', path: '/gyms', roles: ['super_admin'] },
         { icon: Receipt, label: 'Subscription Plans', path: '/subscription-plans', roles: ['super_admin'] },
 
-        // Gym Owner - My Subscription
+        // Gym Owner - My Subscription (always visible for owners)
         { icon: Receipt, label: 'My Subscription', path: '/my-subscription', roles: ['owner'] },
 
-        // Owner and Staff (with feature checks)
-        { icon: Users, label: 'Leads CRM', path: '/crm', feature: 'crm', roles: ['owner', 'staff'] },
-        { icon: CalendarCheck, label: 'Schedule', path: '/schedule', feature: 'scheduling', roles: ['owner', 'staff'] },
-        { icon: Users, label: 'Members', path: '/members', roles: ['super_admin', 'owner', 'staff'] },
-        { icon: CreditCard, label: 'Plans', path: '/plans', roles: ['super_admin', 'owner'] },
-        { icon: CreditCard, label: 'Payments', path: '/payments', feature: 'payments', roles: ['super_admin', 'owner'] },
-        { icon: CalendarCheck, label: 'Attendance', path: '/attendance', feature: 'attendance', roles: ['owner', 'staff'] },
-        { icon: Dumbbell, label: 'Trainers', path: '/trainers', feature: 'staff', roles: ['super_admin', 'owner', 'staff'] },
-        { icon: Package, label: 'Inventory', path: '/inventory', feature: 'inventory', roles: ['owner', 'staff'] },
-        { icon: DollarSign, label: 'Expenses', path: '/expenses', feature: 'financial', roles: ['super_admin', 'owner'] },
-        { icon: TrendingUp, label: 'Revenue', path: '/revenue', feature: 'financial', roles: ['super_admin', 'owner'] },
-        { icon: PieChart, label: 'Financial Reports', path: '/financial-reports', feature: 'financial', roles: ['super_admin', 'owner'] },
+        // Premium features - require subscription
+        { icon: Users, label: 'Leads CRM', path: '/crm', feature: 'crm', roles: ['owner', 'staff'], requiresSubscription: true },
+        { icon: CalendarCheck, label: 'Schedule', path: '/schedule', feature: 'scheduling', roles: ['owner', 'staff'], requiresSubscription: true },
+        { icon: Users, label: 'Members', path: '/members', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
+        { icon: CreditCard, label: 'Plans', path: '/plans', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: CreditCard, label: 'Payments', path: '/payments', feature: 'payments', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: CalendarCheck, label: 'Attendance', path: '/attendance', feature: 'attendance', roles: ['owner', 'staff'], requiresSubscription: true },
+        { icon: Dumbbell, label: 'Trainers', path: '/trainers', feature: 'staff', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
+        { icon: Package, label: 'Inventory', path: '/inventory', feature: 'inventory', roles: ['owner', 'staff'], requiresSubscription: true },
+        { icon: DollarSign, label: 'Expenses', path: '/expenses', feature: 'financial', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: TrendingUp, label: 'Revenue', path: '/revenue', feature: 'financial', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: PieChart, label: 'Financial Reports', path: '/financial-reports', feature: 'financial', roles: ['super_admin', 'owner'], requiresSubscription: true },
 
-        // Support & Help (All authenticated users)
+        // Support & Help (no subscription required)
         { icon: HelpCircle, label: 'Support', path: '/support', roles: ['super_admin', 'owner', 'staff', 'member'] },
 
-        // Support Admin (Staff and Owner)
-        { icon: MessageCircle, label: 'Support Tickets', path: '/support-tickets', roles: ['super_admin', 'owner', 'staff'] },
+        // Support Admin - require subscription for owners/staff
+        { icon: MessageCircle, label: 'Support Tickets', path: '/support-tickets', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
 
-        // Settings & Management (Owner only)
-        { icon: Shield, label: 'Member Access', path: '/member-access', roles: ['super_admin', 'owner'] },
-        { icon: FileQuestion, label: 'FAQ Management', path: '/faq-management', roles: ['super_admin', 'owner'] },
-        { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'] },
-
-        // Member specific (these will be added later when member pages are created)
-        // For now, members can access dashboard and their profile via members/:id
+        // Settings & Management - require subscription
+        { icon: Shield, label: 'Member Access', path: '/member-access', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: FileQuestion, label: 'FAQ Management', path: '/faq-management', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'], requiresSubscription: true },
     ];
 
     const filteredMenuItems = menuItems.filter(item => {
-        // If user is not loaded yet, show all items (will be filtered once user loads)
-        if (!user) return true;
+        // If user is not loaded yet, show only non-subscription items
+        if (!user) return !item.requiresSubscription;
 
         // Check role
         if (item.roles && !hasRole(item.roles)) return false;
@@ -84,6 +83,10 @@ const Sidebar = () => {
         // Check feature (for non-super-admin users)
         // Super admin bypasses feature checks
         if (item.feature && !isSuperAdmin() && !hasFeature(item.feature)) return false;
+
+        // Check subscription (for non-super-admin users)
+        // Super admin bypasses subscription checks
+        if (item.requiresSubscription && !isSuperAdmin() && !hasActiveSubscription()) return false;
 
         return true;
     });

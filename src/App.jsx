@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RoleGuard from './components/auth/RoleGuard';
 import FeatureGuard from './components/auth/FeatureGuard';
+import SubscriptionGuard from './components/auth/SubscriptionGuard';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -124,9 +125,11 @@ function AppRoutes() {
                     path="crm"
                     element={
                         <RoleGuard allowedRoles={['owner', 'staff']}>
-                            <FeatureGuard feature="crm">
-                                <CRM />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="crm">
+                                    <CRM />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -136,9 +139,11 @@ function AppRoutes() {
                     path="schedule"
                     element={
                         <RoleGuard allowedRoles={['owner', 'staff']}>
-                            <FeatureGuard feature="scheduling">
-                                <Schedule />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="scheduling">
+                                    <Schedule />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -148,7 +153,9 @@ function AppRoutes() {
                     path="members"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
-                            <Members />
+                            <SubscriptionGuard>
+                                <Members />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -164,7 +171,9 @@ function AppRoutes() {
                     path="plans"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <Plans />
+                            <SubscriptionGuard>
+                                <Plans />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -174,9 +183,11 @@ function AppRoutes() {
                     path="payments"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FeatureGuard feature="payments">
-                                <Payments />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="payments">
+                                    <Payments />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -186,9 +197,11 @@ function AppRoutes() {
                     path="attendance"
                     element={
                         <RoleGuard allowedRoles={['owner', 'staff']}>
-                            <FeatureGuard feature="attendance">
-                                <Attendance />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="attendance">
+                                    <Attendance />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -198,9 +211,11 @@ function AppRoutes() {
                     path="trainers"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
-                            <FeatureGuard feature="staff">
-                                <Trainers />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="staff">
+                                    <Trainers />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -210,9 +225,11 @@ function AppRoutes() {
                     path="inventory"
                     element={
                         <RoleGuard allowedRoles={['owner', 'staff']}>
-                            <FeatureGuard feature="inventory">
-                                <Inventory />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="inventory">
+                                    <Inventory />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -222,9 +239,11 @@ function AppRoutes() {
                     path="expenses"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FeatureGuard feature="financial">
-                                <Expenses />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="financial">
+                                    <Expenses />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -234,9 +253,11 @@ function AppRoutes() {
                     path="revenue"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FeatureGuard feature="financial">
-                                <Revenue />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="financial">
+                                    <Revenue />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -246,9 +267,11 @@ function AppRoutes() {
                     path="financial-reports"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FeatureGuard feature="financial">
-                                <FinancialReports />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="financial">
+                                    <FinancialReports />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -258,7 +281,9 @@ function AppRoutes() {
                     path="settings"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <Settings />
+                            <SubscriptionGuard>
+                                <Settings />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -268,9 +293,11 @@ function AppRoutes() {
                     path="revenue-sources"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FeatureGuard feature="financial">
-                                <RevenueSources />
-                            </FeatureGuard>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="financial">
+                                    <RevenueSources />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -283,7 +310,9 @@ function AppRoutes() {
                     path="support-tickets"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
-                            <SupportTickets />
+                            <SubscriptionGuard>
+                                <SupportTickets />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -293,7 +322,9 @@ function AppRoutes() {
                     path="faq-management"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <FAQManagement />
+                            <SubscriptionGuard>
+                                <FAQManagement />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />
@@ -303,7 +334,9 @@ function AppRoutes() {
                     path="member-access"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
-                            <MemberAccessSettings />
+                            <SubscriptionGuard>
+                                <MemberAccessSettings />
+                            </SubscriptionGuard>
                         </RoleGuard>
                     }
                 />

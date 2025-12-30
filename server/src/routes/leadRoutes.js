@@ -3,10 +3,12 @@ import { getLeads, getLead, createLead, updateLead, updateLeadStatus, deleteLead
 import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
 import { checkFeature } from '../middleware/featureGuard.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 router.use(checkFeature('crm'));
 router.use(enforceGymScope);
 

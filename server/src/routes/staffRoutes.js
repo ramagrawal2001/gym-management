@@ -5,10 +5,12 @@ import { enforceGymScope } from '../middleware/gymScope.js';
 import { ownerOrSuperAdmin } from '../middleware/rbac.js';
 import { checkFeature } from '../middleware/featureGuard.js';
 import { uploadSingle } from '../middleware/upload.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 router.use(checkFeature('staff'));
 router.use(enforceGymScope);
 

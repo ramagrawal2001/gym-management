@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { authorize } from '../middleware/rbac.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 import notificationController from '../controllers/notificationController.js';
 
 const router = express.Router();
@@ -26,35 +27,35 @@ router.patch('/read-all', authenticate, notificationController.markAllAsRead);
 // ============================================
 
 // Get notification settings
-router.get('/settings', authenticate, authorize('owner', 'super_admin'), notificationController.getSettings);
+router.get('/settings', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.getSettings);
 
 // Update notification settings
-router.put('/settings', authenticate, authorize('owner', 'super_admin'), notificationController.updateSettings);
+router.put('/settings', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.updateSettings);
 
 // ============================================
 // GYM OWNER ROUTES - TEMPLATES
 // ============================================
 
 // Get notification templates
-router.get('/templates', authenticate, authorize('owner', 'super_admin'), notificationController.getTemplates);
+router.get('/templates', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.getTemplates);
 
 // Create/Update template
-router.post('/templates', authenticate, authorize('owner', 'super_admin'), notificationController.saveTemplate);
+router.post('/templates', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.saveTemplate);
 
 // Delete template
-router.delete('/templates/:id', authenticate, authorize('owner', 'super_admin'), notificationController.deleteTemplate);
+router.delete('/templates/:id', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.deleteTemplate);
 
 // ============================================
 // GYM OWNER ROUTES - TESTING & LOGS
 // ============================================
 
 // Send test notification
-router.post('/test', authenticate, authorize('owner', 'super_admin'), notificationController.sendTestNotification);
+router.post('/test', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.sendTestNotification);
 
 // Get notification logs
-router.get('/logs', authenticate, authorize('owner', 'super_admin'), notificationController.getLogs);
+router.get('/logs', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.getLogs);
 
 // Check SMS balance
-router.get('/sms-balance', authenticate, authorize('owner', 'super_admin'), notificationController.checkSMSBalance);
+router.get('/sms-balance', authenticate, requireActiveSubscription, authorize('owner', 'super_admin'), notificationController.checkSMSBalance);
 
 export default router;

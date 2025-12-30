@@ -3,10 +3,12 @@ import { getPlans, getPlan, createPlan, updatePlan, deletePlan } from '../contro
 import { authenticate } from '../middleware/auth.js';
 import { superAdminOnly, ownerOrSuperAdmin } from '../middleware/rbac.js';
 import { enforceGymScope } from '../middleware/gymScope.js';
+import { requireActiveSubscription } from '../middleware/subscriptionGuard.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireActiveSubscription);
 
 // Super admin can access all plans, others need gym scope
 router.get('/', getPlans);
