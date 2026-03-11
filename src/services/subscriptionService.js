@@ -25,8 +25,7 @@ export const verifyPayment = async (paymentData) => {
 };
 
 // Get payment history
-export const getPaymentHistory = async (gymId = null) => {
-    const params = gymId ? { gymId } : {};
+export const getPaymentHistory = async (params = {}) => {
     const response = await api.get('/subscriptions/payments', { params });
     return response.data;
 };
@@ -41,6 +40,12 @@ export const getInvoices = async (gymId = null) => {
 // Cancel subscription (Super Admin)
 export const cancelSubscription = async (id) => {
     const response = await api.put(`/subscriptions/${id}/cancel`);
+    return response.data;
+};
+
+// Grant trial access (Super Admin)
+export const grantTrialAccess = async (data) => {
+    const response = await api.post('/subscriptions/grant-trial', data);
     return response.data;
 };
 
@@ -107,6 +112,7 @@ export default {
     getPaymentHistory,
     getInvoices,
     cancelSubscription,
+    grantTrialAccess,
     loadRazorpayScript,
     openRazorpayCheckout
 };

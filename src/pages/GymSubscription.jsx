@@ -111,12 +111,22 @@ const GymSubscription = () => {
 
             {/* Current Subscription Status */}
             {subscription && (
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
+                <div className={`rounded-xl p-6 text-white ${subscription.status === 'trial'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
+                    : subscription.status === 'active'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600'
+                        : 'bg-gradient-to-r from-gray-600 to-gray-700'
+                    }`}>
                     <div className="flex items-start justify-between">
                         <div>
-                            <h2 className="text-lg font-semibold mb-1">Current Subscription</h2>
-                            <p className="text-blue-100 text-sm">
-                                {subscription.planId?.name || 'Unknown Plan'}
+                            <h2 className="text-lg font-semibold mb-1">
+                                {subscription.status === 'trial' ? 'Trial Subscription' : 'Current Subscription'}
+                            </h2>
+                            <p className={`text-sm ${subscription.status === 'trial' ? 'text-emerald-100' : 'text-blue-100'
+                                }`}>
+                                {subscription.status === 'trial'
+                                    ? 'Free trial — all features enabled'
+                                    : subscription.planId?.name || 'Unknown Plan'}
                             </p>
                         </div>
                         {getStatusBadge(subscription.status)}
@@ -124,27 +134,67 @@ const GymSubscription = () => {
 
                     <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div>
-                            <p className="text-blue-200 text-xs">Start Date</p>
+                            <p className={`text-xs ${subscription.status === 'trial' ? 'text-emerald-200' : 'text-blue-200'}`}>Start Date</p>
                             <p className="font-medium">{formatDate(subscription.startDate)}</p>
                         </div>
                         <div>
-                            <p className="text-blue-200 text-xs">End Date</p>
-                            <p className="font-medium">{formatDate(subscription.endDate)}</p>
+                            <p className={`text-xs ${subscription.status === 'trial' ? 'text-emerald-200' : 'text-blue-200'}`}>
+                                {subscription.status === 'trial' ? 'Trial Ends' : 'End Date'}
+                            </p>
+                            <p className="font-medium">
+                                {formatDate(subscription.status === 'trial' ? subscription.trialEndsAt : subscription.endDate)}
+                            </p>
                         </div>
                         <div>
-                            <p className="text-blue-200 text-xs">Days Remaining</p>
+                            <p className={`text-xs ${subscription.status === 'trial' ? 'text-emerald-200' : 'text-blue-200'}`}>Days Remaining</p>
                             <p className="font-medium">{subscription.daysRemaining || 0} days</p>
                         </div>
                         <div>
-                            <p className="text-blue-200 text-xs">Status</p>
+                            <p className={`text-xs ${subscription.status === 'trial' ? 'text-emerald-200' : 'text-blue-200'}`}>Status</p>
                             <p className="font-medium capitalize">{subscription.status}</p>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Renewal Prompt for Expired or Expiring Soon Subscriptions */}
+            {subscription && (subscription.status === 'expired' || subscription.daysRemaining <= 3) && (
+                <div className={`rounded-xl p-6 border ${subscription.status === 'expired'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                    : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    }`}>
+                    <div className="flex items-start gap-4">
+                        <AlertCircle className={`w-6 h-6 mt-0.5 ${subscription.status === 'expired' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                            }`} />
+                        <div>
+                            <h3 className={`text-lg font-semibold ${subscription.status === 'expired' ? 'text-red-800 dark:text-red-300' : 'text-yellow-800 dark:text-yellow-300'
+                                }`}>
+                                {subscription.status === 'expired'
+                                    ? 'Subscription Expired'
+                                    : 'Subscription Expiring Soon'}
+                            </h3>
+                            <p className={`mt-1 mb-4 ${subscription.status === 'expired' ? 'text-red-600 dark:text-red-400' : 'text-yellow-700 dark:text-yellow-400'
+                                }`}>
+                                {subscription.status === 'expired'
+                                    ? 'Your subscription has expired. Please select a plan below and pay now to restore access to all features.'
+                                    : `Your subscription will expire in ${subscription.daysRemaining} days. Renew now to avoid any interruption in service.`}
+                            </p>
+                            <Button
+                                onClick={() => {
+                                    // Scroll to plans section
+                                    document.getElementById('available-plans').scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                variant={subscription.status === 'expired' ? 'danger' : 'primary'}
+                            >
+                                View Plans & Pay Now
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Available Plans */}
-            <div>
+            <div id="available-plans">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     {plans.length > 0 ? 'Available Plans' : 'No Plans Available'}
                 </h2>
@@ -163,8 +213,8 @@ const GymSubscription = () => {
                             <div
                                 key={plan._id}
                                 className={`bg-white dark:bg-slate-800 rounded-xl border ${plan.isPaid
-                                        ? 'border-green-200 dark:border-green-800'
-                                        : 'border-gray-100 dark:border-slate-700'
+                                    ? 'border-green-200 dark:border-green-800'
+                                    : 'border-gray-100 dark:border-slate-700'
                                     } shadow-sm overflow-hidden`}
                             >
                                 <div className="p-6">
@@ -265,8 +315,8 @@ const GymSubscription = () => {
                                 <div key={payment._id} className="p-4 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${payment.status === 'captured'
-                                                ? 'bg-green-100 dark:bg-green-900/30'
-                                                : 'bg-red-100 dark:bg-red-900/30'
+                                            ? 'bg-green-100 dark:bg-green-900/30'
+                                            : 'bg-red-100 dark:bg-red-900/30'
                                             }`}>
                                             {payment.status === 'captured' ? (
                                                 <Check className="w-5 h-5 text-green-600 dark:text-green-400" />

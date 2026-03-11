@@ -14,7 +14,8 @@ import {
     approveManualPayment,
     checkAndExpireSubscriptions,
     getAuditLogs,
-    handleRazorpayWebhook
+    handleRazorpayWebhook,
+    grantTrialAccess
 } from '../controllers/subscriptionController.js';
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.put('/:id/downgrade', authorize('super_admin', 'owner'), downgradeSubscri
 
 // Super admin routes
 router.get('/', authorize('super_admin'), getSubscriptions);
+router.post('/grant-trial', authorize('super_admin'), grantTrialAccess);
 router.put('/:id/cancel', authorize('super_admin'), cancelSubscription);
 router.put('/invoices/:id/approve-manual', authorize('super_admin'), approveManualPayment);
 router.post('/check-expiry', authorize('super_admin'), checkAndExpireSubscriptions);

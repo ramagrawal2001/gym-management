@@ -50,6 +50,78 @@ export const getSubscriptions = async (req, res) => {
     }
 };
 
+// @desc    Grant trial access to a gym (Super Admin)
+// @route   POST /api/v1/subscriptions/grant-trial
+// @access  Private (Super Admin)
+export const grantTrialAccess = async (req, res) => {
+    try {
+        const { gymId, trialDays = 14, features } = req.body;
+
+        if (!gymId) {
+            return sendError(res, 400, 'Gym ID is required');
+        }
+
+        const gym = await Gym.findById(gymId);
+        if (!gym) {
+            return sendError(res, 404, 'Gym not found');
+        }
+
+        const startDate = new Date();
+        const trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + parseInt(trialDays));
+
+        // Check if subscription already exists for this gym
+        let subscription = await Subscription.findOne({ gymId });
+        const previousState = subscription ? { ...subscription.toObject() } : null;
+
+        if (subscription) {
+            subscription.status = 'trial';
+            subscription.startDate = startDate;
+            subscription.endDate = trialEndsAt;
+            subscription.trialEndsAt = trialEndsAt;
+            await subscription.save();
+        } else {
+            subscription = await Subscription.create({
+                gymId,
+                status: 'trial',
+                startDate,
+                endDate: trialEndsAt,
+                trialEndsAt
+            });
+        }
+
+        // Use features from request body (selected by super admin)
+        const gymFeatures = {
+            'features.crm': features?.crm ?? true,
+            'features.scheduling': features?.scheduling ?? true,
+            'features.attendance': features?.attendance ?? true,
+            'features.inventory': features?.inventory ?? true,
+            'features.staff': features?.staff ?? true,
+            'features.payments': features?.payments ?? true,
+            'features.reports': features?.reports ?? true
+        };
+
+        await Gym.findByIdAndUpdate(gymId, gymFeatures);
+
+        // Log audit
+        await logAudit({
+            subscriptionId: subscription._id,
+            gymId,
+            action: 'trial_granted',
+            description: `Trial access granted for ${trialDays} days to ${gym.name}`,
+            previousState,
+            newState: subscription.toObject(),
+            metadata: { trialDays: parseInt(trialDays), features: gymFeatures },
+            performedBy: req.user._id,
+            performedByRole: req.user.role
+        });
+
+        sendSuccess(res, `Trial access granted for ${trialDays} days`, subscription);
+    } catch (error) {
+        sendError(res, 500, 'Failed to grant trial access', error.message);
+    }
+};
+
 // @desc    Get my gym's subscription (Owner)
 // @route   GET /api/v1/subscriptions/me
 // @access  Private (Owner)
@@ -58,6 +130,9 @@ export const getMySubscription = async (req, res) => {
         if (!req.user.gymId) {
             return sendError(res, 400, 'Gym ID not found for this user');
         }
+
+        // Auto-expire any subscriptions that have passed their end date
+        await Subscription.updateExpiredSubscriptions();
 
         const subscription = await Subscription.findOne({
             gymId: req.user.gymId
@@ -297,12 +372,18 @@ export const verifyPaymentAndActivate = async (req, res) => {
 export const getPaymentHistory = async (req, res) => {
     try {
         const gymId = req.user.role === 'super_admin' ? req.query.gymId : req.user.gymId;
+        const { planId } = req.query;
 
         if (!gymId) {
             return sendError(res, 400, 'Gym ID is required');
         }
 
-        const payments = await SubscriptionPayment.find({ gymId })
+        const query = { gymId };
+        if (planId) {
+            query.planId = planId;
+        }
+
+        const payments = await SubscriptionPayment.find(query)
             .populate('planId', 'name price duration')
             .populate('invoiceId', 'invoiceNumber total')
             .sort({ createdAt: -1 });
