@@ -20,7 +20,7 @@ import { EQUIPMENT_CATEGORIES, EQUIPMENT_CONDITIONS, EQUIPMENT_STATUSES } from '
 const Inventory = () => {
     const { isSuperAdmin, isOwner, isStaff } = useRole();
     const { success: showSuccess, error: showError } = useNotification();
-    
+
     const [equipment, setEquipment] = useState([]);
     const [stats, setStats] = useState({
         operational: 0,
@@ -44,14 +44,14 @@ const Inventory = () => {
         total: 0,
         pages: 0
     });
-    
+
     const debouncedSearch = useDebounce(searchQuery, 500);
 
     useEffect(() => {
         if (isSuperAdmin()) {
             loadGyms();
         }
-    }, [isSuperAdmin]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadEquipment();
@@ -78,14 +78,14 @@ const Inventory = () => {
                 status: statusFilter || undefined,
                 gymId: gymFilter || undefined
             };
-            
+
             // Remove undefined values to avoid sending them in query
             Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
-            
+
             const response = await inventoryService.getEquipment(params);
             const equipmentData = response.data?.data || response.data || [];
             const meta = response.data?.meta || {};
-            
+
             setEquipment(Array.isArray(equipmentData) ? equipmentData : []);
             setStats(meta.stats || {
                 operational: 0,
@@ -261,7 +261,7 @@ const Inventory = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card 
+                <Card
                     className={`p-4 flex items-center gap-4 bg-orange-50 border-orange-100 dark:bg-orange-900/10 dark:border-orange-900/30 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/20 transition-colors ${statusFilter === EQUIPMENT_STATUSES.OUT_OF_ORDER ? 'ring-2 ring-orange-500' : ''}`}
                     onClick={() => handleStatClick(EQUIPMENT_STATUSES.OUT_OF_ORDER)}
                 >
@@ -273,7 +273,7 @@ const Inventory = () => {
                         <h3 className="text-2xl font-bold text-orange-900 dark:text-orange-200">{repairsNeeded} Items</h3>
                     </div>
                 </Card>
-                <Card 
+                <Card
                     className={`p-4 flex items-center gap-4 bg-yellow-50 border-yellow-100 dark:bg-yellow-900/10 dark:border-yellow-900/30 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/20 transition-colors ${statusFilter === EQUIPMENT_STATUSES.MAINTENANCE_DUE ? 'ring-2 ring-yellow-500' : ''}`}
                     onClick={() => handleStatClick(EQUIPMENT_STATUSES.MAINTENANCE_DUE)}
                 >
@@ -285,7 +285,7 @@ const Inventory = () => {
                         <h3 className="text-2xl font-bold text-yellow-900 dark:text-yellow-200">{maintenanceDue} Items</h3>
                     </div>
                 </Card>
-                <Card 
+                <Card
                     className={`p-4 flex items-center gap-4 bg-green-50 border-green-100 dark:bg-green-900/10 dark:border-green-900/30 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors ${statusFilter === EQUIPMENT_STATUSES.OPERATIONAL ? 'ring-2 ring-green-500' : ''}`}
                     onClick={() => handleStatClick(EQUIPMENT_STATUSES.OPERATIONAL)}
                 >
@@ -411,7 +411,7 @@ const Inventory = () => {
                                     </TableCell>
                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center justify-end gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => handleViewDetails(item)}
                                                 className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                                 title="View Details"
@@ -420,14 +420,14 @@ const Inventory = () => {
                                             </button>
                                             {!isStaff() && (
                                                 <>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleRecordService(item)}
                                                         className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                                         title="Record Service"
                                                     >
                                                         <Wrench size={18} />
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleEdit(item)}
                                                         className="p-1 text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
                                                         title="Edit"
@@ -435,7 +435,7 @@ const Inventory = () => {
                                                         <Edit size={18} />
                                                     </button>
                                                     {(isSuperAdmin() || isOwner()) && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleDelete(item)}
                                                             className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                                             title="Delete"
@@ -464,13 +464,13 @@ const Inventory = () => {
                 title={selectedEquipment ? "Edit Equipment" : "Add New Equipment"}
                 size="3xl"
             >
-                <EquipmentForm 
+                <EquipmentForm
                     equipment={selectedEquipment}
                     onSubmit={handleCreateEquipment}
                     onCancel={() => {
                         setIsModalOpen(false);
                         setSelectedEquipment(null);
-                    }} 
+                    }}
                 />
             </Modal>
 

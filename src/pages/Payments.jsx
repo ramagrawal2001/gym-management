@@ -25,7 +25,7 @@ const Payments = () => {
         if (isSuperAdmin()) {
             loadGyms();
         }
-    }, [isSuperAdmin]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadPayments();

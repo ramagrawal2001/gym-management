@@ -36,7 +36,7 @@ const Members = () => {
         if (isSuperAdmin()) {
             loadGyms();
         }
-    }, [isSuperAdmin]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadMembers();
@@ -70,7 +70,7 @@ const Members = () => {
         try {
             // Extract profileImageFile and pass it along
             const payload = { ...memberData };
-            
+
             if (memberData._id) {
                 // Update existing member
                 await memberService.updateMember(memberData._id, payload);
@@ -254,7 +254,7 @@ const Members = () => {
                                                     <Eye size={18} />
                                                 </Link>
                                                 {!isStaff() && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleEdit(member)}
                                                         className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
                                                     >
@@ -262,7 +262,7 @@ const Members = () => {
                                                     </button>
                                                 )}
                                                 {(isSuperAdmin() || isOwner()) && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDelete(member)}
                                                         className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                                     >
@@ -288,13 +288,13 @@ const Members = () => {
                 title={selectedMember ? "Edit Member" : "Add New Member"}
                 size="3xl"
             >
-                <MemberForm 
+                <MemberForm
                     member={selectedMember}
                     onSubmit={handleCreateMember}
                     onCancel={() => {
                         setIsModalOpen(false);
                         setSelectedMember(null);
-                    }} 
+                    }}
                 />
             </Modal>
 
