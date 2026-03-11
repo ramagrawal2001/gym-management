@@ -42,7 +42,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'https://gym-management-kx5h.onrender.com',
+    'https://www.gym-management-kx5h.onrender.com'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
