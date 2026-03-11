@@ -31,7 +31,8 @@ const PlanForm = ({ plan = null, gyms = [], onSubmit, onCancel }) => {
             inventory: true,
             staff: true,
             payments: true,
-            reports: true
+            reports: true,
+            memberLogin: true
         }
     });
     const [isLoading, setIsLoading] = useState(false);
@@ -217,7 +218,7 @@ const PlanForm = ({ plan = null, gyms = [], onSubmit, onCancel }) => {
                     Enabled Features
                 </label>
                 <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
-                    {['crm', 'scheduling', 'attendance', 'inventory', 'staff', 'payments', 'reports'].map((feature) => (
+                    {['crm', 'scheduling', 'attendance', 'inventory', 'staff', 'payments', 'reports', 'memberLogin'].map((feature) => (
                         <label key={feature} className="flex items-center">
                             <input
                                 type="checkbox"
@@ -227,7 +228,7 @@ const PlanForm = ({ plan = null, gyms = [], onSubmit, onCancel }) => {
                                 className="rounded border-gray-300 dark:border-slate-600 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-slate-700"
                             />
                             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 capitalize">
-                                {feature}
+                                {feature === 'memberLogin' ? 'Member Login' : feature}
                             </span>
                         </label>
                     ))}

@@ -21,6 +21,7 @@ import Trainers from './pages/Trainers';
 import Inventory from './pages/Inventory';
 import Settings from './pages/Settings';
 import CRM from './pages/CRM';
+import LeadCRM from './pages/super-admin/LeadCRM';
 import Schedule from './pages/Schedule';
 import Gyms from './pages/Gyms';
 import GymDetails from './pages/GymDetails';
@@ -106,6 +107,14 @@ function AppRoutes() {
                     element={
                         <RoleGuard allowedRoles={['super_admin']}>
                             <SubscriptionPlans />
+                        </RoleGuard>
+                    }
+                />
+                <Route
+                    path="super-admin/leads"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin']}>
+                            <LeadCRM />
                         </RoleGuard>
                     }
                 />

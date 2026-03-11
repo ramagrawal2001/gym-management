@@ -13,6 +13,7 @@ import * as gymService from '../services/gymService';
 import * as attendanceService from '../services/attendanceService';
 import * as classService from '../services/scheduleService';
 import * as invoiceService from '../services/invoiceService';
+import * as superAdminLeadService from '../services/superAdminLeadService';
 import { formatDate } from '../utils/formatDate';
 import { formatCurrency } from '../utils/formatCurrency';
 import { useAuth } from '../hooks/useAuth';
@@ -28,7 +29,9 @@ const Dashboard = () => {
         expiringSoon: 0,
         // Super admin stats
         totalGyms: 0,
-        activeGyms: 0
+        activeGyms: 0,
+        totalPlatformLeads: 0,
+        convertedPlatformLeads: 0
     });
     const [recentMembers, setRecentMembers] = useState([]);
     const [membershipData, setMembershipData] = useState([]);
@@ -72,7 +75,7 @@ const Dashboard = () => {
             const gymsRes = await gymService.getGyms({ page: 1, limit: 1000 });
             const gymsData = gymsRes.data?.data || gymsRes.data || [];
             const gyms = Array.isArray(gymsData) ? gymsData : [];
-            
+
             const totalGyms = gyms.length;
             const activeGyms = gyms.filter(g => g.isActive !== false).length;
 
@@ -80,7 +83,7 @@ const Dashboard = () => {
             const membersRes = await memberService.getMembers({ page: 1, limit: 1000 });
             const membersData = membersRes.data?.data?.members || membersRes.data?.members || membersRes.data?.data || membersRes.data || [];
             const allMembers = Array.isArray(membersData) ? membersData : [];
-            
+
             const totalMembers = allMembers.length;
             const expiring = allMembers.filter(m => {
                 if (!m.subscriptionEnd) return false;
@@ -104,7 +107,7 @@ const Dashboard = () => {
                 const paymentsRes = await paymentService.getPayments({ page: 1, limit: 1000 });
                 payments = paymentsRes.data?.data?.payments || paymentsRes.data?.payments || paymentsRes.data?.data || paymentsRes.data || [];
                 payments = Array.isArray(payments) ? payments : [];
-                
+
                 const thisMonth = new Date();
                 thisMonth.setDate(1);
                 const monthlyPayments = payments.filter(p => {
@@ -117,13 +120,29 @@ const Dashboard = () => {
                 console.error('Error loading payments:', error);
             }
 
+            // Fetch Lead Stats
+            let totalPlatformLeads = 0;
+            let convertedPlatformLeads = 0;
+            try {
+                const leadStatsRes = await superAdminLeadService.getLeadStats();
+                const leadData = leadStatsRes.data?.data;
+                if (leadData) {
+                    totalPlatformLeads = leadData.totalLeads || 0;
+                    convertedPlatformLeads = leadData.convertedLeads || 0;
+                }
+            } catch (error) {
+                console.error('Error loading lead stats:', error);
+            }
+
             setStats({
                 totalGyms,
                 activeGyms,
                 totalMembers,
                 monthlyRevenue,
                 newJoinings: newMembers.length,
-                expiringSoon: expiring
+                expiringSoon: expiring,
+                totalPlatformLeads,
+                convertedPlatformLeads
             });
 
             // Set recent members
@@ -148,15 +167,15 @@ const Dashboard = () => {
                     revenue: 0
                 });
             }
-            
+
             payments.forEach(p => {
                 if (p.status === 'completed' && p.paidAt) {
                     const paidDate = new Date(p.paidAt);
                     const monthIndex = months.findIndex(m => {
                         const monthIndex = monthNames.indexOf(m.date);
                         if (monthIndex === -1) return false;
-                        return paidDate.getMonth() === monthIndex && 
-                               paidDate.getFullYear() === new Date().getFullYear();
+                        return paidDate.getMonth() === monthIndex &&
+                            paidDate.getFullYear() === new Date().getFullYear();
                     });
                     if (monthIndex !== -1) {
                         months[monthIndex].revenue += p.amount || 0;
@@ -173,7 +192,7 @@ const Dashboard = () => {
         // Fetch members
         const membersRes = await memberService.getMembers({ page: 1, limit: 100 });
         const membersData = membersRes.data?.data?.members || membersRes.data?.members || membersRes.data?.data || membersRes.data || [];
-        
+
         // Calculate stats
         const total = Array.isArray(membersData) ? membersData.length : 0;
         const expiring = Array.isArray(membersData) ? membersData.filter(m => {
@@ -189,7 +208,7 @@ const Dashboard = () => {
         try {
             const paymentsRes = await paymentService.getPayments({ page: 1, limit: 100 });
             payments = paymentsRes.data?.data?.payments || paymentsRes.data?.payments || paymentsRes.data?.data || paymentsRes.data || [];
-            
+
             const thisMonth = new Date();
             thisMonth.setDate(1);
             const monthlyPayments = Array.isArray(payments) ? payments.filter(p => {
@@ -243,7 +262,7 @@ const Dashboard = () => {
                 revenue: 0
             });
         }
-        
+
         if (Array.isArray(payments)) {
             payments.forEach(p => {
                 if (p.status === 'completed' && p.paidAt) {
@@ -251,8 +270,8 @@ const Dashboard = () => {
                     const monthIndex = months.findIndex(m => {
                         const monthIndex = monthNames.indexOf(m.date);
                         if (monthIndex === -1) return false;
-                        return paidDate.getMonth() === monthIndex && 
-                               paidDate.getFullYear() === new Date().getFullYear();
+                        return paidDate.getMonth() === monthIndex &&
+                            paidDate.getFullYear() === new Date().getFullYear();
                     });
                     if (monthIndex !== -1) {
                         months[monthIndex].revenue += p.amount || 0;
@@ -268,7 +287,7 @@ const Dashboard = () => {
             // Get member's own profile
             const memberRes = await memberService.getMyProfile();
             const member = memberRes.data?.data || memberRes.data;
-            
+
             if (!member) {
                 return;
             }
@@ -324,16 +343,16 @@ const Dashboard = () => {
             // Get today's classes
             const today = new Date();
             const dayOfWeek = today.getDay();
-            const classesRes = await classService.getClasses({ 
-                page: 1, 
+            const classesRes = await classService.getClasses({
+                page: 1,
                 limit: 10,
                 dayOfWeek: dayOfWeek.toString()
             });
             const classesData = classesRes.data?.data || classesRes.data || [];
             const classes = Array.isArray(classesData) ? classesData : [];
-            
+
             // Filter classes assigned to this staff member
-            const myClasses = classes.filter(c => 
+            const myClasses = classes.filter(c =>
                 c.trainerId?._id === user._id || c.trainerId === user._id
             );
 
@@ -475,6 +494,22 @@ const Dashboard = () => {
                             icon={CreditCard}
                             color="orange"
                         />
+                        <StatCard
+                            title="B2B Leads (Pipeline)"
+                            value={stats.totalPlatformLeads?.toString() || '0'}
+                            trend="up"
+                            trendValue=""
+                            icon={UserPlus}
+                            color="blue"
+                        />
+                        <StatCard
+                            title="Converted Leads"
+                            value={stats.convertedPlatformLeads?.toString() || '0'}
+                            trend="up"
+                            trendValue=""
+                            icon={Building2}
+                            color="green"
+                        />
                     </>
                 ) : (
                     <>
@@ -587,49 +622,49 @@ const Dashboard = () => {
                     <div className="p-6 border-b border-gray-100 dark:border-slate-700">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Registrations</h3>
                     </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {recentMembers.length === 0 ? (
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-gray-500 dark:text-gray-400 py-8">
-                                    No recent registrations
-                                </TableCell>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Plan</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Amount</TableHead>
                             </TableRow>
-                        ) : (
-                            recentMembers.map((member) => {
-                                const user = member.userId;
-                                const plan = member.planId;
-                                return (
-                                    <TableRow key={member._id}>
-                                        <TableCell className="font-medium">
-                                            {user?.firstName && user?.lastName 
-                                                ? `${user.firstName} ${user.lastName}`
-                                                : user?.email || 'N/A'}
-                                        </TableCell>
-                                        <TableCell>{plan?.name || 'N/A'}</TableCell>
-                                        <TableCell>{formatDate(member.createdAt)}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
-                                                {member.status || 'Active'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{plan?.price ? formatCurrency(plan.price) : 'N/A'}</TableCell>
-                                    </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                        </TableHeader>
+                        <TableBody>
+                            {recentMembers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-gray-500 dark:text-gray-400 py-8">
+                                        No recent registrations
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                recentMembers.map((member) => {
+                                    const user = member.userId;
+                                    const plan = member.planId;
+                                    return (
+                                        <TableRow key={member._id}>
+                                            <TableCell className="font-medium">
+                                                {user?.firstName && user?.lastName
+                                                    ? `${user.firstName} ${user.lastName}`
+                                                    : user?.email || 'N/A'}
+                                            </TableCell>
+                                            <TableCell>{plan?.name || 'N/A'}</TableCell>
+                                            <TableCell>{formatDate(member.createdAt)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
+                                                    {member.status || 'Active'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{plan?.price ? formatCurrency(plan.price) : 'N/A'}</TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             )}
         </div>
     );

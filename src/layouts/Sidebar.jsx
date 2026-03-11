@@ -44,6 +44,7 @@ const Sidebar = () => {
         // Super Admin only (no subscription required)
         { icon: Building2, label: 'Gyms', path: '/gyms', roles: ['super_admin'] },
         { icon: Receipt, label: 'Subscription Plans', path: '/subscription-plans', roles: ['super_admin'] },
+        { icon: Users, label: 'Lead CRM', path: '/super-admin/leads', roles: ['super_admin'] },
 
         // Gym Owner - My Subscription (always visible for owners)
         { icon: Receipt, label: 'My Subscription', path: '/my-subscription', roles: ['owner'] },

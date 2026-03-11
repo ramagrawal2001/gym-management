@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Subscription from '../models/Subscription.js';
 import { checkMemberLoginAccess } from './memberAccessMiddleware.js';
 
 export const authenticate = async (req, res, next) => {
@@ -45,6 +46,28 @@ export const authenticate = async (req, res, next) => {
           success: false,
           message: 'Your login access has been disabled. Please contact your gym administrator.'
         });
+      }
+
+      // Check if gym's subscription has memberLogin feature enabled (for members only)
+      if (req.user.role === 'member' && req.user.gymId) {
+        const subscription = await Subscription.findOne({
+          gymId: req.user.gymId,
+          status: { $in: ['active', 'trial'] }
+        }).populate('planId');
+
+        if (!subscription || !subscription.planId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Your gym does not have an active subscription. Please contact your gym administrator.'
+          });
+        }
+
+        if (subscription.planId.features?.memberLogin === false) {
+          return res.status(403).json({
+            success: false,
+            message: 'Member login is not enabled for your gym\'s subscription plan. Please contact your gym administrator.'
+          });
+        }
       }
 
       next();

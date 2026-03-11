@@ -60,7 +60,8 @@ const subscriptionPlanSchema = new mongoose.Schema({
         inventory: { type: Boolean, default: true },
         staff: { type: Boolean, default: true },
         payments: { type: Boolean, default: true },
-        reports: { type: Boolean, default: true }
+        reports: { type: Boolean, default: true },
+        memberLogin: { type: Boolean, default: true }
     },
 
     // Trial days (0 = no trial)

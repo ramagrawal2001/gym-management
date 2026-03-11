@@ -30,6 +30,7 @@ import financialReportRoutes from './routes/financialReportRoutes.js';
 import memberAccessRoutes from './routes/memberAccessRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import faqRoutes from './routes/faqRoutes.js';
+import superAdminLeadRoutes from './routes/superAdminLeadRoutes.js';
 import { handleRazorpayWebhook } from './controllers/subscriptionController.js';
 
 // Load environment variables
@@ -80,6 +81,7 @@ app.use('/api/v1/financial-reports', financialReportRoutes);
 app.use('/api/v1/member-access', memberAccessRoutes);
 app.use('/api/v1/support', supportRoutes);
 app.use('/api/v1/faqs', faqRoutes);
+app.use('/api/v1/super-admin/leads', superAdminLeadRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
