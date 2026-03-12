@@ -1,47 +1,96 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 // Initialize Resend with the API key
-// (Provide a mock instance if key is missing so the app doesn't crash)
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+// Initialize Nodemailer transporter
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 465, // Default 465 for implicit SSL
+    secure: process.env.SMTP_PORT ? process.env.SMTP_SECURE === 'true' : true,
+    auth: {
+      user: process.env.SMTP_USER || process.env.EMAIL_USER,
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
+    },
+    tls: {
+      rejectUnauthorized: process.env.NODE_ENV === 'production'
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
+  });
+};
+
 export const sendEmail = async (to, subject, html, text = null) => {
   try {
-    // Check if email credentials are configured
-    if (!resend) {
-      console.log(`\n=========================================\n`);
-      console.log(`[Email Service - DEV MODE] Email credentials not configured.`);
-      console.log(`Would send email to: ${to}`);
-      console.log(`Subject: ${subject}`);
+    const provider = process.env.EMAIL_PROVIDER || process.env.EMAIL_SERVICE || 'smtp'; // e.g. 'resend', 'smtp', or 'gmail'
+    let fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gymos.com';
+    const cleanText = text || html.replace(/<[^>]*>/g, ''); // Strip HTML for text version
 
-      // Extract OTP from HTML for console logging
-      const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
-      if (otpMatch) {
-        console.log(`\n👉 [OTP CODE]: ${otpMatch[1]} 👈\n`);
+    // RESEND PROVIDER
+    if (provider === 'resend' || provider === 'RESEND') {
+      if (!resend) {
+        console.log(`\n[Email Service - DEV MODE] Resend API Key not configured.`);
+
+        // Extract OTP from HTML for console logging
+        const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
+        if (otpMatch) {
+          console.log(`\n👉 [OTP CODE]: ${otpMatch[1]} 👈\n`);
+        }
+        return { success: true };
       }
-      console.log(`\n=========================================\n`);
-      return { success: true };
+
+      // Resend free tier usually requires onboarding@resend.dev unless domain is verified
+      if (!process.env.EMAIL_FROM) {
+        fromEmail = 'onboarding@resend.dev';
+      }
+
+      const { data, error } = await resend.emails.send({
+        from: fromEmail,
+        to,
+        subject,
+        html,
+        text: cleanText
+      });
+
+      if (error) {
+        console.error('❌ Resend API Error:', error);
+        throw error;
+      }
+
+      console.log(`✅ Email sent successfully to ${to} via Resend: ${data.id}`);
+      return { success: true, messageId: data.id };
+
+      // SMTP PROVIDER
+    } else {
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        console.log(`\n[Email Service - DEV MODE] SMTP Email credentials not configured.`);
+
+        // Extract OTP from HTML for console logging 
+        const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
+        if (otpMatch) {
+          console.log(`\n👉 [OTP CODE]: ${otpMatch[1]} 👈\n`);
+        }
+        return { success: true };
+      }
+
+      const transporter = createTransporter();
+      const mailOptions = {
+        from: fromEmail,
+        to,
+        subject,
+        html,
+        text: cleanText
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully to ${to} via SMTP: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
     }
-
-    // Parse EMAIL_FROM format or use Resend's default testing email
-    let fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
-    });
-
-    if (error) {
-      console.error('❌ Resend API Error:', error);
-      throw error;
-    }
-
-    console.log(`✅ Email sent successfully to ${to}: ${data.id}`);
-    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('❌ Email sending error:', error.message);
     console.error('Full error:', error);
@@ -52,10 +101,9 @@ export const sendEmail = async (to, subject, html, text = null) => {
       console.log(`\n\n[URGENT] Email delivery failed, but here is the requested OTP Code: ${otpMatch[1]}\n\n`);
     }
 
-    // In production on Railway/Vercel, we swallow the error so the frontend 
-    // doesn't crash the user with a 500 error during testing if they don't have Resend setup yet.
-    console.log(`[Email Service] Warning: Email failed to send due to API error. User can proceed via console logs.`);
-    return { success: false, message: 'Email failed to send. OTP printed to console.' };
+    // Swallow error for frontend continuity
+    console.log(`[Email Service] Warning: Email failed to send due to API/Network error. User can proceed via OTP printed in console logs.`);
+    return { success: false, message: 'Email failed to send. OTP printed to server console.' };
   }
 };
 
@@ -115,4 +163,3 @@ export const sendOtpEmail = async (email, otp, role = null) => {
 
   return await sendEmail(email, subject, html);
 };
-
