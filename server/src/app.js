@@ -47,8 +47,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3000',
     'http://127.0.0.1:5173',
-    'https://gym-management-kx5h.onrender.com',
-    'https://www.gym-management-kx5h.onrender.com'
+    'https://gym-management-orpin.vercel.app',
+    'https://www.gym-management-orpin.vercel.app'
   ],
   credentials: true
 }));
