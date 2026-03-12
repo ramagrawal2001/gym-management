@@ -7,6 +7,7 @@ import Badge from '../../components/common/Badge';
 import LeadFormModal from '../../components/super-admin/leads/LeadFormModal';
 import LeadDetailsDrawer from '../../components/super-admin/leads/LeadDetailsDrawer';
 import KanbanBoard from '../../components/super-admin/leads/KanbanBoard';
+import WhatsAppButton from '../../components/common/WhatsAppButton';
 
 const STATUSES = ['New', 'Contacted', 'Demo Scheduled', 'Negotiation', 'Converted', 'Lost'];
 
@@ -185,7 +186,10 @@ const LeadCRM = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-sm">{lead.email}</div>
-                                                <div className="text-sm text-gray-500">{lead.phone}</div>
+                                                <div className="text-sm flex items-center gap-2 text-gray-500">
+                                                    {lead.phone}
+                                                    <WhatsAppButton phone={lead.phone} />
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant={getStatusColor(lead.status)}>{lead.status}</Badge>

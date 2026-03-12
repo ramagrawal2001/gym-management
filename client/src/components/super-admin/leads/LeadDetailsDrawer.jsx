@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { addLeadNote, updateLead } from '../../../services/superAdminLeadService';
 import Badge from '../../common/Badge';
 import { formatDate } from '../../../utils/formatDate';
+import WhatsAppButton from '../../common/WhatsAppButton';
 
 const STATUSES = ['New', 'Contacted', 'Demo Scheduled', 'Negotiation', 'Converted', 'Lost'];
 
@@ -108,6 +109,7 @@ const LeadDetailsDrawer = ({ isOpen, onClose, lead, onUpdate }) => {
                                 <div className="flex items-center text-sm">
                                     <Phone className="w-4 h-4 text-gray-400 mr-3" />
                                     <span className="text-gray-900 dark:text-white">{lead.phone || 'N/A'}</span>
+                                    {lead.phone && <WhatsAppButton phone={lead.phone} className="ml-3" size={16} />}
                                 </div>
                                 <div className="flex items-center text-sm">
                                     <DollarSign className="w-4 h-4 text-gray-400 mr-3" />

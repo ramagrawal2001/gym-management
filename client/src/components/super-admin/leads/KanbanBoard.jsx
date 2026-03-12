@@ -4,6 +4,7 @@ import { Calendar, DollarSign, Building2, Phone } from 'lucide-react';
 import Badge from '../../common/Badge';
 import { updateLead } from '../../../services/superAdminLeadService';
 import toast from 'react-hot-toast';
+import WhatsAppButton from '../../common/WhatsAppButton';
 
 const COLUMNS = [
     { id: 'New', title: 'New Leads', color: 'border-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/10' },
@@ -113,9 +114,12 @@ const KanbanBoard = ({ leads, onChange, onLeadClick }) => {
                                         </div>
 
                                         <div className="space-y-2 mt-3">
-                                            <div className="flex items-center text-xs text-gray-500">
-                                                <Phone className="w-3 h-3 mr-2 text-gray-400" />
-                                                {lead.contactName}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center text-xs text-gray-500">
+                                                    <Phone className="w-3 h-3 mr-2 text-gray-400" />
+                                                    {lead.contactName}
+                                                </div>
+                                                <WhatsAppButton phone={lead.phone} size={14} />
                                             </div>
                                             {lead.expectedValue > 0 && (
                                                 <div className="flex items-center text-xs text-green-600 dark:text-green-500 font-medium">
