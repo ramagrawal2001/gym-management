@@ -28,7 +28,7 @@ export const register = async (req, res) => {
     // 2. Otherwise, use gymId from request body
     // 3. For non-super_admin roles, gymId is required
     let finalGymId = gymId;
-    
+
     if (req.user && (req.user.role === 'owner' || req.user.role === 'staff')) {
       // If authenticated owner/staff is registering a member, use their gymId
       if (role === 'member' || !role) {
@@ -124,7 +124,13 @@ export const requestOtp = async (req, res) => {
 
     // Send OTP email
     try {
-      await sendOtpEmail(email, otp, user.role);
+      const emailResult = await sendOtpEmail(email, otp, user.role);
+      if (emailResult && !emailResult.success) {
+        if (process.env.NODE_ENV === 'production') {
+          await Otp.findByIdAndDelete(otpRecord._id);
+          return sendError(res, 500, emailResult.message || 'Failed to send OTP email due to server configuration.');
+        }
+      }
     } catch (emailError) {
       console.error('Error sending OTP email:', emailError);
       // In development, continue even if email fails
@@ -235,7 +241,7 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('gymId', 'name features branding');
-    
+
     sendSuccess(res, 'User retrieved successfully', {
       user: {
         id: user._id,
