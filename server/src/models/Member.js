@@ -74,13 +74,13 @@ const memberSchema = new mongoose.Schema({
     allergies: [String]
   },
 
-  workoutPlan: {
-    type: String,
-    trim: true
+  assignedWorkoutPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'WorkoutPlan'
   },
-  dietPlan: {
-    type: String,
-    trim: true
+  assignedDietPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DietPlan'
   },
   notes: {
     type: String,
@@ -92,7 +92,7 @@ const memberSchema = new mongoose.Schema({
 });
 
 // Auto-generate Member ID using timestamp + random for fast, unique generation
-memberSchema.pre('save', async function(next) {
+memberSchema.pre('save', async function (next) {
   if (!this.memberId) {
     // Generate unique ID: M + timestamp (base36, shorter) + random hex
     // Format: M + [timestamp in base36] + [4 random hex chars]

@@ -3,24 +3,22 @@
 export const enforceGymScope = (req, res, next) => {
   try {
     // Super admin can access all gyms
-    // If gymId is provided in query, use it; otherwise can access all
+    // If gymId is provided, use it; otherwise can access all
     if (req.user.role === 'super_admin') {
-      if (req.query.gymId) {
-        req.gymId = req.query.gymId;
-      }
+      req.gymId = req.query.gymId || req.body.gymId || req.params.gymId;
       return next();
     }
 
     // For other roles, ensure gymId matches user's gymId
     const userGymId = req.user.gymId?.toString();
-    
+
     if (!userGymId) {
       return res.status(403).json({
         success: false,
         message: 'Access denied: User does not have a gym association'
       });
     }
-    
+
     // Check gymId in params
     if (req.params.gymId && req.params.gymId !== userGymId) {
       return res.status(403).json({

@@ -36,6 +36,10 @@ import MemberAccessSettings from './pages/MemberAccessSettings';
 import SupportTickets from './pages/SupportTickets';
 import FAQManagement from './pages/FAQManagement';
 import RevenueSources from './pages/settings/RevenueSources';
+import WorkoutPlans from './pages/WorkoutPlans';
+import DietPlans from './pages/DietPlans';
+import MemberWorkoutPlan from './pages/member/MemberWorkoutPlan';
+import MemberDietPlan from './pages/member/MemberDietPlan';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
@@ -338,14 +342,62 @@ function AppRoutes() {
                     }
                 />
 
-                {/* Member Access Settings - Owner only */}
+                {/* Member Access Settings - Owner only, requires memberLogin */}
                 <Route
                     path="member-access"
                     element={
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
                             <SubscriptionGuard>
-                                <MemberAccessSettings />
+                                <FeatureGuard feature="memberLogin">
+                                    <MemberAccessSettings />
+                                </FeatureGuard>
                             </SubscriptionGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Workout Plans - Owner/Staff only, requires memberLogin */}
+                <Route
+                    path="workout-plans"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="memberLogin">
+                                    <WorkoutPlans />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Diet Plans - Owner/Staff only, requires memberLogin */}
+                <Route
+                    path="diet-plans"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner', 'staff']}>
+                            <SubscriptionGuard>
+                                <FeatureGuard feature="memberLogin">
+                                    <DietPlans />
+                                </FeatureGuard>
+                            </SubscriptionGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Member Plans - Members only */}
+                <Route
+                    path="my-workout-plan"
+                    element={
+                        <RoleGuard allowedRoles={['member']}>
+                            <MemberWorkoutPlan />
+                        </RoleGuard>
+                    }
+                />
+                <Route
+                    path="my-diet-plan"
+                    element={
+                        <RoleGuard allowedRoles={['member']}>
+                            <MemberDietPlan />
                         </RoleGuard>
                     }
                 />

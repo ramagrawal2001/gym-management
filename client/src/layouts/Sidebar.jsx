@@ -16,7 +16,9 @@ import {
     HelpCircle,
     MessageCircle,
     FileQuestion,
-    Shield
+    Shield,
+    ClipboardList,
+    Apple
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRole } from '../hooks/useRole';
@@ -62,6 +64,10 @@ const Sidebar = () => {
         { icon: TrendingUp, label: 'Revenue', path: '/revenue', feature: 'financial', roles: ['super_admin', 'owner'], requiresSubscription: true },
         { icon: PieChart, label: 'Financial Reports', path: '/financial-reports', feature: 'financial', roles: ['super_admin', 'owner'], requiresSubscription: true },
 
+        // Member pages
+        { icon: ClipboardList, label: 'My Workout Plan', path: '/my-workout-plan', feature: 'memberLogin', roles: ['member'] },
+        { icon: Apple, label: 'My Diet Plan', path: '/my-diet-plan', feature: 'memberLogin', roles: ['member'] },
+
         // Support & Help (no subscription required)
         { icon: HelpCircle, label: 'Support', path: '/support', roles: ['super_admin', 'owner', 'staff', 'member'] },
 
@@ -69,7 +75,9 @@ const Sidebar = () => {
         { icon: MessageCircle, label: 'Support Tickets', path: '/support-tickets', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
 
         // Settings & Management - require subscription
-        { icon: Shield, label: 'Member Access', path: '/member-access', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: Shield, label: 'Member Access', path: '/member-access', feature: 'memberLogin', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: ClipboardList, label: 'Workout Plans', path: '/workout-plans', feature: 'memberLogin', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
+        { icon: Apple, label: 'Diet Plans', path: '/diet-plans', feature: 'memberLogin', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
         { icon: FileQuestion, label: 'FAQ Management', path: '/faq-management', roles: ['super_admin', 'owner'], requiresSubscription: true },
         { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'], requiresSubscription: true },
     ];

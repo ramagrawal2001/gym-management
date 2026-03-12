@@ -22,6 +22,16 @@ export const API_ENDPOINTS = {
   PLANS: {
     BASE: '/plans'
   },
+  WORKOUT_PLANS: {
+    BASE: '/workout-plans',
+    ASSIGN: (id) => `/workout-plans/${id}/assign`,
+    MY_PLAN: '/workout-plans/my-plan'
+  },
+  DIET_PLANS: {
+    BASE: '/diet-plans',
+    ASSIGN: (id) => `/diet-plans/${id}/assign`,
+    MY_PLAN: '/diet-plans/my-plan'
+  },
   // Members
   MEMBERS: {
     BASE: '/members',

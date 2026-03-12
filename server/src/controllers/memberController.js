@@ -13,7 +13,9 @@ export const getMyProfile = async (req, res) => {
     const member = await Member.findOne({ userId: req.user._id })
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration features')
-      .populate('gymId', 'name');
+      .populate('gymId', 'name')
+      .populate('assignedWorkoutPlan')
+      .populate('assignedDietPlan');
 
     if (!member) {
       return sendError(res, 404, 'Member profile not found');
@@ -32,17 +34,19 @@ export const getMembers = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const skip = (page - 1) * limit;
-    
+
     // Members can only see their own data
     if (req.user.role === 'member') {
       const member = await Member.findOne({ userId: req.user._id })
         .populate('userId', 'email firstName lastName phone avatar')
-        .populate('planId', 'name price duration');
-      
+        .populate('planId', 'name price duration')
+        .populate('assignedWorkoutPlan', 'name')
+        .populate('assignedDietPlan', 'name');
+
       if (!member) {
         return sendError(res, 404, 'Member profile not found');
       }
-      
+
       return sendSuccess(res, 'Member retrieved successfully', [member], {
         pagination: {
           page: 1,
@@ -52,7 +56,7 @@ export const getMembers = async (req, res) => {
         }
       });
     }
-    
+
     // Build query - super admin can see all or filter by gymId
     const query = {};
     if (req.user.role === 'super_admin') {
@@ -63,7 +67,7 @@ export const getMembers = async (req, res) => {
     } else {
       query.gymId = req.user.gymId;
     }
-    
+
     if (status) {
       query.status = status;
     }
@@ -71,8 +75,10 @@ export const getMembers = async (req, res) => {
     if (search) {
       const members = await Member.find(query)
         .populate('userId', 'email firstName lastName phone avatar')
-        .populate('planId', 'name price duration');
-      
+        .populate('planId', 'name price duration')
+        .populate('assignedWorkoutPlan', 'name')
+        .populate('assignedDietPlan', 'name');
+
       const filtered = members.filter(m => {
         const user = m.userId;
         const searchLower = search.toLowerCase();
@@ -97,14 +103,16 @@ export const getMembers = async (req, res) => {
     }
 
     // Sort by gymId for super admin, then by createdAt
-    const sortOptions = req.user.role === 'super_admin' 
-      ? { gymId: 1, createdAt: -1 } 
+    const sortOptions = req.user.role === 'super_admin'
+      ? { gymId: 1, createdAt: -1 }
       : { createdAt: -1 };
-    
+
     const members = await Member.find(query)
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration')
       .populate('gymId', 'name')
+      .populate('assignedWorkoutPlan', 'name')
+      .populate('assignedDietPlan', 'name')
       .skip(skip)
       .limit(parseInt(limit))
       .sort(sortOptions);
@@ -132,7 +140,9 @@ export const getMember = async (req, res) => {
     const member = await Member.findById(req.params.id)
       .populate('userId', 'email firstName lastName phone avatar')
       .populate('planId', 'name price duration features')
-      .populate('gymId', 'name');
+      .populate('gymId', 'name')
+      .populate('assignedWorkoutPlan')
+      .populate('assignedDietPlan');
 
     if (!member) {
       return sendError(res, 404, 'Member not found');
@@ -194,18 +204,18 @@ export const createMember = async (req, res) => {
       }
     }
 
-    const { 
-        email, 
-        firstName, 
-        lastName, 
-        phone, 
-        planId, 
-        subscriptionStart, 
-        subscriptionEnd, 
-        userId, // This will be ignored for creation but good to destructure out
-        ...otherData 
+    const {
+      email,
+      firstName,
+      lastName,
+      phone,
+      planId,
+      subscriptionStart,
+      subscriptionEnd,
+      userId, // This will be ignored for creation but good to destructure out
+      ...otherData
     } = bodyData;
-    
+
     const gymId = req.gymId || req.user.gymId;
 
     // --- BACKEND VALIDATION ---
@@ -213,13 +223,13 @@ export const createMember = async (req, res) => {
       return sendError(res, 400, 'Email, firstName, and lastName are required.');
     }
     if (!planId) {
-        return sendError(res, 400, 'planId is required.');
+      return sendError(res, 400, 'planId is required.');
     }
     if (!subscriptionStart || !subscriptionEnd) {
-        return sendError(res, 400, 'subscriptionStart and subscriptionEnd dates are required.');
+      return sendError(res, 400, 'subscriptionStart and subscriptionEnd dates are required.');
     }
     // --- END VALIDATION ---
-    
+
     // Check if user with this email already exists
     let user = await User.findOne({ email });
 
@@ -231,7 +241,7 @@ export const createMember = async (req, res) => {
       }
     } else {
       // If user doesn't exist, create a new user record for them
-       const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+      const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
       user = await User.create({
         email,
         firstName,
@@ -258,7 +268,9 @@ export const createMember = async (req, res) => {
 
     const populated = await member.populate([
       { path: 'userId', select: 'email firstName lastName phone avatar' },
-      { path: 'planId', select: 'name price duration' }
+      { path: 'planId', select: 'name price duration' },
+      { path: 'assignedWorkoutPlan', select: 'name' },
+      { path: 'assignedDietPlan', select: 'name' }
     ]);
 
     sendCreated(res, 'Member created successfully', populated);
@@ -305,7 +317,7 @@ export const updateMember = async (req, res) => {
         if (member.profileImage?.publicId) {
           await deleteFile(member.profileImage.publicId);
         }
-        
+
         const uploadResult = await uploadFile(req.file.path, 'members');
         req.body.profileImage = {
           url: uploadResult.url,
@@ -346,14 +358,14 @@ export const updateMember = async (req, res) => {
       if (phone) user.phone = phone;
       await user.save();
     }
-    
+
     // For members updating their own profile, restrict fields
     if (req.user.role === 'member') {
-        delete memberData.planId;
-        delete memberData.subscriptionStart;
-        delete memberData.subscriptionEnd;
-        delete memberData.status;
-        delete memberData.gymId;
+      delete memberData.planId;
+      delete memberData.subscriptionStart;
+      delete memberData.subscriptionEnd;
+      delete memberData.status;
+      delete memberData.gymId;
     }
 
     // Update Member model
@@ -361,8 +373,10 @@ export const updateMember = async (req, res) => {
       new: true,
       runValidators: true,
     }).populate([
-        { path: 'userId', select: 'email firstName lastName phone avatar' },
-        { path: 'planId', select: 'name price duration' }
+      { path: 'userId', select: 'email firstName lastName phone avatar' },
+      { path: 'planId', select: 'name price duration' },
+      { path: 'assignedWorkoutPlan' },
+      { path: 'assignedDietPlan' }
     ]);
 
     sendSuccess(res, 'Member updated successfully', updatedMember);

@@ -6,6 +6,8 @@ import Badge from '../components/common/Badge';
 import { clsx } from "clsx";
 import { useState, useEffect } from 'react';
 import * as memberService from '../services/memberService';
+import * as workoutPlanService from '../services/workoutPlanService';
+import * as dietPlanService from '../services/dietPlanService';
 import { useNotification } from '../hooks/useNotification';
 import { formatDate } from '../utils/formatDate';
 import { useRole } from '../hooks/useRole';
@@ -15,16 +17,57 @@ const MemberProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { isSuperAdmin, isOwner, isStaff } = useRole();
-    const { error: showError } = useNotification();
+    const { success: showSuccess, error: showError } = useNotification();
     const [activeTab, setActiveTab] = useState('activity');
     const [member, setMember] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [workoutPlans, setWorkoutPlans] = useState([]);
+    const [dietPlans, setDietPlans] = useState([]);
+    const [isAssigning, setIsAssigning] = useState(false);
 
     useEffect(() => {
         if (id) {
             loadMember();
         }
     }, [id]);
+
+    useEffect(() => {
+        if (member && (isOwner() || isStaff() || isSuperAdmin())) {
+            loadTemplates(member.gymId?._id || member.gymId);
+        }
+    }, [member]);
+
+    const loadTemplates = async (gymId) => {
+        try {
+            const params = gymId ? { gymId } : {};
+            const [workoutRes, dietRes] = await Promise.all([
+                workoutPlanService.getWorkoutPlans(params),
+                dietPlanService.getDietPlans(params)
+            ]);
+            setWorkoutPlans(workoutRes.data?.data || []);
+            setDietPlans(dietRes.data?.data || []);
+        } catch (error) {
+            console.error('Failed to load templates:', error);
+        }
+    };
+
+    const handleAssignPlan = async (type, planId) => {
+        if (!planId) return;
+        try {
+            setIsAssigning(true);
+            if (type === 'workout') {
+                await workoutPlanService.assignWorkoutPlan(planId, [member._id]);
+            } else {
+                await dietPlanService.assignDietPlan(planId, [member._id]);
+            }
+            await loadMember(); // reload to get populated plan
+            showSuccess('Plan assigned successfully'); // Notice using showError for success? NO, use generic or showSuccess
+        } catch (error) {
+            console.error('Failed to assign plan:', error);
+        } finally {
+            setIsAssigning(false);
+        }
+    };
 
     const loadMember = async () => {
         setIsLoading(true);
@@ -117,9 +160,9 @@ const MemberProfile = () => {
                 <div className="lg:col-span-1 space-y-6">
                     <Card className="p-6 text-center">
                         <div className="w-24 h-24 mx-auto bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
-                            <img 
-                                src={profileImageUrl} 
-                                alt={fullName} 
+                            <img
+                                src={profileImageUrl}
+                                alt={fullName}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                     e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || id}`;
@@ -132,8 +175,8 @@ const MemberProfile = () => {
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{gym.name}</p>
                         )}
                         <div className="mt-4 flex justify-center">
-                            <Badge 
-                                variant={member.status === 'active' ? 'success' : member.status === 'expired' ? 'warning' : 'gray'} 
+                            <Badge
+                                variant={member.status === 'active' ? 'success' : member.status === 'expired' ? 'warning' : 'gray'}
                                 className="px-3 py-1"
                             >
                                 {member.status || 'Active'}
@@ -195,8 +238,8 @@ const MemberProfile = () => {
                             {daysRemaining > 0 && (
                                 <>
                                     <div className="w-full bg-blue-200 dark:bg-blue-900/30 rounded-full h-2 mt-3">
-                                        <div 
-                                            className="bg-blue-600 h-2 rounded-full" 
+                                        <div
+                                            className="bg-blue-600 h-2 rounded-full"
                                             style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                                         ></div>
                                     </div>
@@ -272,28 +315,76 @@ const MemberProfile = () => {
                             )}
                             {activeTab === 'diet' && (
                                 <div className="space-y-4">
-                                    {member.dietPlan ? (
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Assigned Diet Plan</h3>
+                                        {(isOwner() || isStaff() || isSuperAdmin()) && (
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    className="rounded-lg border-gray-300 dark:border-slate-700 dark:bg-slate-900 text-gray-900 dark:text-white text-sm"
+                                                    onChange={(e) => handleAssignPlan('diet', e.target.value)}
+                                                    value={member.assignedDietPlan?._id || ''}
+                                                    disabled={isAssigning}
+                                                >
+                                                    <option value="" disabled>Change Plan...</option>
+                                                    {dietPlans.map(p => (
+                                                        <option key={p._id} value={p._id}>{p.name} {p.isDefault ? '(Default Gym Plan)' : ''}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {member.assignedDietPlan ? (
                                         <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                                            <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{member.dietPlan}</p>
+                                            <p className="font-medium text-gray-900 dark:text-white">
+                                                {member.assignedDietPlan.name}
+                                                {member.assignedDietPlan.isDefault && <Badge variant="primary" className="ml-2">Default Plan</Badge>}
+                                            </p>
+                                            {member.assignedDietPlan.description && (
+                                                <p className="text-sm text-gray-500 mt-1">{member.assignedDietPlan.description}</p>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                                             <Utensils size={48} className="mx-auto mb-4 opacity-50" />
-                                            <p>No diet plan assigned yet.</p>
+                                            <p>No specific diet plan assigned. They will see the gym's default plan.</p>
                                         </div>
                                     )}
                                 </div>
                             )}
                             {activeTab === 'workout' && (
                                 <div className="space-y-4">
-                                    {member.workoutPlan ? (
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Assigned Workout Plan</h3>
+                                        {(isOwner() || isStaff() || isSuperAdmin()) && (
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    className="rounded-lg border-gray-300 dark:border-slate-700 dark:bg-slate-900 text-gray-900 dark:text-white text-sm"
+                                                    onChange={(e) => handleAssignPlan('workout', e.target.value)}
+                                                    value={member.assignedWorkoutPlan?._id || ''}
+                                                    disabled={isAssigning}
+                                                >
+                                                    <option value="" disabled>Change Plan...</option>
+                                                    {workoutPlans.map(p => (
+                                                        <option key={p._id} value={p._id}>{p.name} {p.isDefault ? '(Default Gym Plan)' : ''}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {member.assignedWorkoutPlan ? (
                                         <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                                            <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{member.workoutPlan}</p>
+                                            <p className="font-medium text-gray-900 dark:text-white">
+                                                {member.assignedWorkoutPlan.name}
+                                                {member.assignedWorkoutPlan.isDefault && <Badge variant="primary" className="ml-2">Default Plan</Badge>}
+                                            </p>
+                                            {member.assignedWorkoutPlan.description && (
+                                                <p className="text-sm text-gray-500 mt-1">{member.assignedWorkoutPlan.description}</p>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                                             <Dumbbell size={48} className="mx-auto mb-4 opacity-50" />
-                                            <p>No workout routine assigned yet.</p>
+                                            <p>No specific workout routine assigned. They will see the gym's default plan.</p>
                                         </div>
                                     )}
                                 </div>
