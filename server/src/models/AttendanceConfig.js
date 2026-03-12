@@ -78,7 +78,4 @@ const attendanceConfigSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for faster lookups
-attendanceConfigSchema.index({ gymId: 1 });
-
 export default mongoose.model('AttendanceConfig', attendanceConfigSchema);
