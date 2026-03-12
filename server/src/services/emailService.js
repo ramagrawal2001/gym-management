@@ -60,17 +60,16 @@ export const sendEmail = async (to, subject, html, text = null) => {
     console.error('Full error:', error);
 
     // Extract OTP from HTML for console logging if email fails
+    // Log OTP for manual entry if email fails, regardless of environment
     const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
     if (otpMatch) {
-      console.log(`[OTP Code for manual entry]: ${otpMatch[1]}`);
+      console.log(`\n\n[URGENT] Email delivery failed, but here is the requested OTP Code: ${otpMatch[1]}\n\n`);
     }
 
-    // In development, log OTP but don't throw if email fails
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Email Service] Email failed but continuing in dev mode`);
-      return { success: true };
-    }
-    throw error;
+    // In production on Railway/Vercel, SMTP ports are often restricted. 
+    // We swallow the error so the frontend doesn't crash the user with a 500 error during testing.
+    console.log(`[Email Service] Warning: Email failed to send due to network restrictions. User can proceed via console logs.`);
+    return { success: false, message: 'Email failed to send due to provider restrictions. OTP printed to console.' };
   }
 };
 
