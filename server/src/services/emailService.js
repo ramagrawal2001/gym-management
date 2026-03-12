@@ -44,10 +44,9 @@ export const sendEmail = async (to, subject, html, text = null) => {
         return { success: true };
       }
 
-      // Resend free tier usually requires onboarding@resend.dev unless domain is verified
-      if (!process.env.EMAIL_FROM) {
-        fromEmail = 'onboarding@resend.dev';
-      }
+      // We no longer forcefully override EMAIL_FROM to onboarding@resend.dev
+      // because the user has verified a custom domain ('gympro.globalprotech.in').
+      // It will now safely use process.env.EMAIL_FROM (e.g. 'GymPro <noreply@gympro.globalprotech.in>')
 
       const { data, error } = await resend.emails.send({
         from: fromEmail,
