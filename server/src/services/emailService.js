@@ -1,75 +1,61 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Create transporter (configure with your email service)
-const createTransporter = () => {
-  const emailService = process.env.EMAIL_SERVICE || 'gmail';
-
-  // Standard robust SMTP configuration
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT) || 465, // Use 465 for implicit SSL on Railway
-    secure: process.env.SMTP_PORT ? process.env.SMTP_SECURE === 'true' : true, // True for 465
-    auth: {
-      user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD // App Password required for Gmail
-    },
-    tls: {
-      rejectUnauthorized: process.env.NODE_ENV === 'production'
-    },
-    connectionTimeout: 10000, // 10s timeout
-    greetingTimeout: 10000,
-    socketTimeout: 15000
-  });
-
-  return transporter;
-};
+// Initialize Resend with the API key
+// (Provide a mock instance if key is missing so the app doesn't crash)
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 export const sendEmail = async (to, subject, html, text = null) => {
   try {
     // Check if email credentials are configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.log(`[Email Service] Email credentials not configured. Would send email to ${to}`);
+    if (!resend) {
+      console.log(`\n=========================================\n`);
+      console.log(`[Email Service - DEV MODE] Email credentials not configured.`);
+      console.log(`Would send email to: ${to}`);
       console.log(`Subject: ${subject}`);
-      console.log(`Body: ${html}`);
+
       // Extract OTP from HTML for console logging
       const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
       if (otpMatch) {
-        console.log(`[OTP Code]: ${otpMatch[1]}`);
+        console.log(`\n👉 [OTP CODE]: ${otpMatch[1]} 👈\n`);
       }
+      console.log(`\n=========================================\n`);
       return { success: true };
     }
 
-    const transporter = createTransporter();
+    // Parse EMAIL_FROM format or use Resend's default testing email
+    let fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-    // Parse EMAIL_FROM format: "Name <email@domain.com>" or just "email@domain.com"
-    let fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gymos.com';
-
-    const mailOptions = {
+    const { data, error } = await resend.emails.send({
       from: fromEmail,
       to,
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, '') // Strip HTML for text version
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${to}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    if (error) {
+      console.error('❌ Resend API Error:', error);
+      throw error;
+    }
+
+    console.log(`✅ Email sent successfully to ${to}: ${data.id}`);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error('❌ Email sending error:', error.message);
     console.error('Full error:', error);
 
     // Extract OTP from HTML for console logging if email fails
-    // Log OTP for manual entry if email fails, regardless of environment
     const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
     if (otpMatch) {
       console.log(`\n\n[URGENT] Email delivery failed, but here is the requested OTP Code: ${otpMatch[1]}\n\n`);
     }
 
-    // In production on Railway/Vercel, SMTP ports are often restricted. 
-    // We swallow the error so the frontend doesn't crash the user with a 500 error during testing.
-    console.log(`[Email Service] Warning: Email failed to send due to network restrictions. User can proceed via console logs.`);
-    return { success: false, message: 'Email failed to send due to provider restrictions. OTP printed to console.' };
+    // In production on Railway/Vercel, we swallow the error so the frontend 
+    // doesn't crash the user with a 500 error during testing if they don't have Resend setup yet.
+    console.log(`[Email Service] Warning: Email failed to send due to API error. User can proceed via console logs.`);
+    return { success: false, message: 'Email failed to send. OTP printed to console.' };
   }
 };
 
