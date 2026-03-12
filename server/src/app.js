@@ -48,7 +48,9 @@ app.use(cors({
     'http://localhost:3000',
     'http://127.0.0.1:5173',
     'https://gym-management-orpin.vercel.app',
-    'https://www.gym-management-orpin.vercel.app'
+    'https://www.gym-management-orpin.vercel.app',
+    'https://gympro.globalprotech.in',
+    'https://www.gympro.globalprotech.in'
   ],
   credentials: true
 }));
