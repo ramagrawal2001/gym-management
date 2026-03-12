@@ -94,6 +94,5 @@ subscriptionInvoiceSchema.pre('save', async function (next) {
 // Index for efficient queries
 subscriptionInvoiceSchema.index({ gymId: 1 });
 subscriptionInvoiceSchema.index({ status: 1 });
-subscriptionInvoiceSchema.index({ invoiceNumber: 1 });
 
 export default mongoose.model('SubscriptionInvoice', subscriptionInvoiceSchema);

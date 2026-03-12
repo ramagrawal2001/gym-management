@@ -67,7 +67,7 @@ const invoiceSchema = new mongoose.Schema({
 });
 
 // Generate invoice number before saving
-invoiceSchema.pre('save', async function(next) {
+invoiceSchema.pre('save', async function (next) {
   if (!this.invoiceNumber) {
     const count = await mongoose.model('Invoice').countDocuments({ gymId: this.gymId });
     this.invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(6, '0')}`;

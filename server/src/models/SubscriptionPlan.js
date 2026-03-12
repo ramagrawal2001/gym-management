@@ -118,7 +118,6 @@ subscriptionPlanSchema.set('toJSON', { virtuals: true });
 subscriptionPlanSchema.set('toObject', { virtuals: true });
 
 // Index for efficient queries
-subscriptionPlanSchema.index({ gymId: 1 });
-subscriptionPlanSchema.index({ paymentLinkToken: 1 });
+// (Removed duplicates)
 
 export default mongoose.model('SubscriptionPlan', subscriptionPlanSchema);

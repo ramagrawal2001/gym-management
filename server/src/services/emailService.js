@@ -3,31 +3,22 @@ import nodemailer from 'nodemailer';
 // Create transporter (configure with your email service)
 const createTransporter = () => {
   const emailService = process.env.EMAIL_SERVICE || 'gmail';
-  
-  // Gmail configuration
-  if (emailService === 'gmail') {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD // Use App Password for Gmail
-      }
-    });
-    return transporter;
-  }
-  
-  // Generic SMTP configuration
+
+  // Standard robust SMTP configuration
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: false, // true for 465, false for other ports
+    secure: process.env.SMTP_SECURE === 'true' || false,
     auth: {
       user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
-    }
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD // App Password required for Gmail
+    },
+    tls: {
+      rejectUnauthorized: process.env.NODE_ENV === 'production'
+    },
+    connectionTimeout: 10000, // 10s timeout
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 
   return transporter;
@@ -49,10 +40,10 @@ export const sendEmail = async (to, subject, html, text = null) => {
     }
 
     const transporter = createTransporter();
-    
+
     // Parse EMAIL_FROM format: "Name <email@domain.com>" or just "email@domain.com"
     let fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@gymos.com';
-    
+
     const mailOptions = {
       from: fromEmail,
       to,
@@ -67,13 +58,13 @@ export const sendEmail = async (to, subject, html, text = null) => {
   } catch (error) {
     console.error('❌ Email sending error:', error.message);
     console.error('Full error:', error);
-    
+
     // Extract OTP from HTML for console logging if email fails
     const otpMatch = html.match(/<div class="otp-code">(\d+)<\/div>/);
     if (otpMatch) {
       console.log(`[OTP Code for manual entry]: ${otpMatch[1]}`);
     }
-    
+
     // In development, log OTP but don't throw if email fails
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Email Service] Email failed but continuing in dev mode`);
@@ -90,14 +81,14 @@ export const sendWelcomeEmail = async (user) => {
     <p>Hi ${user.firstName || user.email},</p>
     <p>Your account has been created successfully.</p>
   `;
-  
+
   return await sendEmail(user.email, subject, html);
 };
 
 export const sendOtpEmail = async (email, otp, role = null) => {
   const subject = 'Your GymOS Login OTP';
   const roleText = role === 'super_admin' ? 'Super Admin' : role === 'owner' ? 'Gym Owner' : 'User';
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
