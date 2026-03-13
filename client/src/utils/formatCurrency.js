@@ -7,7 +7,7 @@ export const formatCurrency = (amount, currency = 'INR', locale = 'en-IN') => {
       currency: currency
     }).format(amount);
   } catch (_) {
-    return `$${amount.toFixed(2)}`;
+    return `₹${amount.toFixed(2)}`;
   }
 };
 

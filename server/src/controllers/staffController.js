@@ -205,10 +205,8 @@ export const createStaff = async (req, res) => {
         return sendError(res, 409, 'This user is already a staff member of your gym.');
       }
       
-      // Prevent downgrading owners or super_admins to staff
-      if (user.role === 'owner' || user.role === 'super_admin') {
-        return sendError(res, 403, `Cannot create staff record for user with role: ${user.role}. Users with this role cannot be staff members.`);
-      }
+      // Note: We intentionally allow owners to act as staff (e.g., teaching classes)
+      // but we do not allow them to be downgraded to 'staff' later in this block.
       
       // If user exists with different gymId, check if we should allow it
       if (user.gymId && user.gymId.toString() !== gymId.toString()) {
@@ -220,8 +218,9 @@ export const createStaff = async (req, res) => {
         user.gymId = gymId;
       }
       
-      // If user exists but doesn't have staff role, update their role
-      if (user.role !== 'staff') {
+      // If user exists but doesn't have staff, owner, or super_admin role, update their role to staff.
+      // E.g., upgrading a 'member' to 'staff'.
+      if (user.role === 'member') {
         user.role = 'staff';
         await user.save();
       }

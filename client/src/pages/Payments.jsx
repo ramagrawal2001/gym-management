@@ -61,6 +61,48 @@ const Payments = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!payments || payments.length === 0) return;
+        
+        const headers = ['Transaction ID', 'Member', 'Plan', 'Date', 'Method', 'Amount', 'Status'];
+        if (isSuperAdmin()) headers.splice(1, 0, 'Gym');
+        
+        const csvContent = [
+            headers.join(','),
+            ...payments.map(p => {
+                const memberName = `${p.memberId?.userId?.firstName || ''} ${p.memberId?.userId?.lastName || ''}`.trim() || p.memberId?.userId?.email || 'N/A';
+                const gymName = p.gymId?.name || 'N/A';
+                const planName = p.invoiceId?.planId?.name || 'Manual Payment';
+                const date = formatDate(p.paidAt || p.createdAt);
+                const method = p.method?.replace('_', ' ') || 'N/A';
+                const amount = p.amount || 0;
+                const status = p.status || 'Pending';
+                
+                const row = [
+                    p.transactionId || `#${p._id.slice(-8)}`,
+                    `"${memberName}"`,
+                    `"${planName}"`,
+                    `"${date}"`,
+                    `"${method}"`,
+                    amount,
+                    status
+                ];
+                if (isSuperAdmin()) row.splice(1, 0, `"${gymName}"`);
+                return row.join(',');
+            })
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `payments_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const getStatusVariant = (status) => {
         switch (status) {
             case 'completed':
@@ -88,7 +130,7 @@ const Payments = () => {
                         <FileText size={18} className="mr-2" />
                         Reports
                     </Button>
-                    <Button>
+                    <Button onClick={handleExport} disabled={payments.length === 0}>
                         <Download size={18} className="mr-2" />
                         Export
                     </Button>
@@ -141,6 +183,7 @@ const Payments = () => {
                             <TableHead>Transaction ID</TableHead>
                             {isSuperAdmin() && <TableHead>Gym</TableHead>}
                             <TableHead>Member</TableHead>
+                            <TableHead>Plan</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Method</TableHead>
                             <TableHead>Amount</TableHead>
@@ -151,13 +194,13 @@ const Payments = () => {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={isSuperAdmin() ? 8 : 7} className="text-center py-8">
+                                <TableCell colSpan={isSuperAdmin() ? 9 : 8} className="text-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                                 </TableCell>
                             </TableRow>
                         ) : payments.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={isSuperAdmin() ? 8 : 7} className="text-center text-gray-500 dark:text-gray-400 py-8">
+                                <TableCell colSpan={isSuperAdmin() ? 9 : 8} className="text-center text-gray-500 dark:text-gray-400 py-8">
                                     No payments found
                                 </TableCell>
                             </TableRow>
@@ -184,6 +227,11 @@ const Payments = () => {
                                                     ? `${user.firstName} ${user.lastName}`
                                                     : user?.email || 'N/A'}
                                             </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-gray-900 dark:text-gray-200">
+                                                {payment.invoiceId?.planId?.name || 'Manual Payment'}
+                                            </span>
                                         </TableCell>
                                         <TableCell>{formatDate(payment.paidAt || payment.createdAt)}</TableCell>
                                         <TableCell>

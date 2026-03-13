@@ -9,6 +9,8 @@ import {
 import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { formatCurrency } from '../utils/formatCurrency';
 import Input from '../components/common/Input';
+import { Printer } from 'lucide-react';
+import Button from '../components/common/Button';
 
 const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
@@ -36,6 +38,10 @@ const FinancialReports = () => {
         return `${item._id.month}/${item._id.year}`;
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     // Prepare chart data
     const trendsData = expenseTrends.map((expense, idx) => ({
         period: formatPeriodLabel(expense),
@@ -46,10 +52,16 @@ const FinancialReports = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-slate-700 print:hidden">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Reports</h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Comprehensive financial analytics and P&L reports</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handlePrint}>
+                        <Printer size={18} className="mr-2" />
+                        Print Report
+                    </Button>
                 </div>
             </div>
 

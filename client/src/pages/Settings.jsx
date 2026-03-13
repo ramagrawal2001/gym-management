@@ -27,9 +27,9 @@ const Settings = () => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Currency</label>
                         <select className="block w-full max-w-xs rounded-lg border border-gray-300 bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm">
+                            <option>INR (₹)</option>
                             <option>USD ($)</option>
                             <option>EUR (€)</option>
-                            <option>GBP (£)</option>
                         </select>
                     </div>
 

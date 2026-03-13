@@ -10,8 +10,11 @@ import * as workoutPlanService from '../services/workoutPlanService';
 import * as dietPlanService from '../services/dietPlanService';
 import { useNotification } from '../hooks/useNotification';
 import { formatDate } from '../utils/formatDate';
+import { formatCurrency } from '../utils/formatCurrency';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../components/common/Table';
 import { useRole } from '../hooks/useRole';
 import { GENDER_OPTIONS } from '../utils/constants';
+import * as paymentService from '../services/paymentService';
 
 const MemberProfile = () => {
     const { id } = useParams();
@@ -24,6 +27,9 @@ const MemberProfile = () => {
     const [workoutPlans, setWorkoutPlans] = useState([]);
     const [dietPlans, setDietPlans] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
+    const [payments, setPayments] = useState([]);
+    const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+    const [paymentsLoaded, setPaymentsLoaded] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -50,6 +56,26 @@ const MemberProfile = () => {
             console.error('Failed to load templates:', error);
         }
     };
+
+    const loadPayments = async () => {
+        setIsLoadingPayments(true);
+        try {
+            const response = await paymentService.getPayments({ memberId: member._id, limit: 100 });
+            setPayments(response.data?.data?.payments || response.data?.payments || response.data?.data || []);
+            setPaymentsLoaded(true);
+        } catch (error) {
+            console.error('Failed to load payments:', error);
+            showError('Failed to load payment history');
+        } finally {
+            setIsLoadingPayments(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'payments' && member && !paymentsLoaded) {
+            loadPayments();
+        }
+    }, [activeTab, member, paymentsLoaded]);
 
     const handleAssignPlan = async (type, planId) => {
         if (!planId) return;
@@ -308,9 +334,56 @@ const MemberProfile = () => {
                                 </div>
                             )}
                             {activeTab === 'payments' && (
-                                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                    <CreditCard size={48} className="mx-auto mb-4 opacity-50" />
-                                    <p>Payment history feature coming soon.</p>
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment History</h3>
+                                    {isLoadingPayments ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        </div>
+                                    ) : payments.length === 0 ? (
+                                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                            <CreditCard size={48} className="mx-auto mb-4 opacity-50" />
+                                            <p>No payment history found.</p>
+                                        </div>
+                                    ) : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Plan</TableHead>
+                                                    <TableHead>Amount</TableHead>
+                                                    <TableHead>Method</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead className="text-right">Action</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {payments.map(payment => (
+                                                    <TableRow key={payment._id}>
+                                                        <TableCell>{formatDate(payment.paidAt || payment.createdAt)}</TableCell>
+                                                        <TableCell>{payment.invoiceId?.planId?.name || 'Manual Payment'}</TableCell>
+                                                        <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
+                                                        <TableCell className="capitalize">{payment.method?.replace('_', ' ')}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={payment.status === 'completed' ? 'success' : 'warning'}>
+                                                                {payment.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right gap-2 flex justify-end">
+                                                            <Button variant="ghost" size="sm" onClick={() => window.print()} title="Download Receipt">
+                                                                Receipt
+                                                            </Button>
+                                                            {payment.invoiceId && (
+                                                                <Button variant="ghost" size="sm" onClick={() => window.print()} title="Download Invoice">
+                                                                    Invoice
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
                                 </div>
                             )}
                             {activeTab === 'diet' && (

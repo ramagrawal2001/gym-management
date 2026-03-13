@@ -180,7 +180,7 @@ const StaffForm = ({ staff = null, onSubmit, onCancel }) => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hourly Rate ($)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hourly Rate (₹)</label>
                     <input 
                         type="number" 
                         name="hourlyRate" 

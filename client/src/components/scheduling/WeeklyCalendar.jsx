@@ -6,26 +6,49 @@ import Button from '../common/Button';
 import { clsx } from 'clsx';
 import Badge from '../common/Badge';
 
-const WeeklyCalendar = () => {
+const WeeklyCalendar = ({ classes = [] }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const startDate = startOfWeek(currentDate);
 
     const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(startDate, i));
 
-    const classes = [
-        { id: 1, name: 'Morning Yoga', time: '07:00 AM', duration: '60 min', instructor: 'Rachel Zane', date: addDays(startDate, 1), color: 'green' },
-        { id: 2, name: 'HIIT Blast', time: '09:00 AM', duration: '45 min', instructor: 'Harvey Specter', date: addDays(startDate, 1), color: 'red' },
-        { id: 3, name: 'Zumba Dance', time: '06:00 PM', duration: '60 min', instructor: 'Donna Paulsen', date: addDays(startDate, 2), color: 'purple' },
-        { id: 4, name: 'Power Lifting', time: '05:00 PM', duration: '90 min', instructor: 'Mike Ross', date: addDays(startDate, 3), color: 'blue' },
-        { id: 5, name: 'Morning Yoga', time: '07:00 AM', duration: '60 min', instructor: 'Rachel Zane', date: addDays(startDate, 4), color: 'green' },
-    ];
-
     const getClassesForDay = (day) => {
-        return classes.filter(c => isSameDay(c.date, day));
+        const dayIndex = day.getDay(); // 0 is Sunday, 1 is Monday...
+        const targetDate = new Date(day);
+        targetDate.setHours(0,0,0,0);
+
+        return classes.filter(c => {
+            if (c.isRecurring) {
+                // Must match day of week
+                if (c.schedule?.dayOfWeek !== dayIndex) return false;
+                
+                const classStart = new Date(c.startDate);
+                classStart.setHours(0,0,0,0);
+                
+                // Class hasn't started yet
+                if (targetDate < classStart) return false;
+                
+                // Class has expired
+                if (c.endDate) {
+                    const classEnd = new Date(c.endDate);
+                    classEnd.setHours(23,59,59,999);
+                    if (targetDate > classEnd) return false;
+                }
+                return true;
+            } else {
+                // Non-recurring: must match EXACT date
+                const classStart = new Date(c.startDate);
+                classStart.setHours(0,0,0,0);
+                return classStart.getTime() === targetDate.getTime();
+            }
+        });
     };
 
     const nextWeek = () => setCurrentDate(addDays(currentDate, 7));
     const prevWeek = () => setCurrentDate(addDays(currentDate, -7));
+
+    // Assign colors based on index or hash to make it look nice
+    const colors = ['border-l-green-500', 'border-l-blue-500', 'border-l-purple-500', 'border-l-red-500', 'border-l-yellow-500'];
 
     return (
         <div className="space-y-6">
@@ -53,28 +76,26 @@ const WeeklyCalendar = () => {
                         </div>
 
                         <div className="space-y-2">
-                            {getClassesForDay(day).map(session => (
-                                <Card key={session.id} className={clsx(
+                            {getClassesForDay(day).map((session, i) => (
+                                <Card key={session._id} className={clsx(
                                     "p-3 text-left border-l-4 hover:shadow-md cursor-pointer transition-shadow",
-                                    session.color === 'green' && "border-l-green-500",
-                                    session.color === 'red' && "border-l-red-500",
-                                    session.color === 'blue' && "border-l-blue-500",
-                                    session.color === 'purple' && "border-l-purple-500",
+                                    colors[i % colors.length]
                                 )}>
                                     <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{session.name}</h4>
                                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         <Clock size={12} className="mr-1" />
-                                        {session.time}
+                                        {session.schedule?.startTime} - {session.schedule?.endTime}
                                     </div>
                                     <div className="flex items-center justify-between mt-2">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{session.instructor}</span>
-                                        <Badge variant="gray" className="text-[10px] px-1.5 py-0">12/20</Badge>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {session.trainerId?.firstName} {session.trainerId?.lastName}
+                                        </span>
+                                        <Badge variant="gray" className="text-[10px] px-1.5 py-0">
+                                            {session.bookings?.length || 0}/{session.capacity}
+                                        </Badge>
                                     </div>
                                 </Card>
                             ))}
-                            <button className="w-full py-2 text-xs text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg border border-dashed border-gray-200 dark:border-slate-700 transition-colors">
-                                + Add Class
-                            </button>
                         </div>
                     </div>
                 ))}

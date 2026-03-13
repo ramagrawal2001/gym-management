@@ -23,6 +23,30 @@ export const getAvailableClasses = async (req, res) => {
       query['schedule.dayOfWeek'] = parseInt(dayOfWeek);
     }
 
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    query.$or = [
+      // Recurring classes that haven't ended yet
+      {
+        isRecurring: true,
+        startDate: { $lte: currentDate },
+        $or: [
+          { endDate: { $exists: false } },
+          { endDate: null },
+          { endDate: { $gte: currentDate } }
+        ]
+      },
+      // Non-recurring classes exact match
+      {
+        isRecurring: false,
+        startDate: {
+          $gte: currentDate,
+          $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
+    ];
+
     const classes = await Class.find(query)
       .populate('trainerId', 'firstName lastName email')
       .skip(skip)
@@ -61,6 +85,43 @@ export const getClasses = async (req, res) => {
 
     if (dayOfWeek !== undefined) {
       query['schedule.dayOfWeek'] = parseInt(dayOfWeek);
+    }
+
+    // Support a 'date' query to show classes running on a specific date
+    if (req.query.date) {
+      const queryDate = new Date(req.query.date);
+      queryDate.setHours(0, 0, 0, 0);
+      
+      query.$or = [
+        {
+          isRecurring: true,
+          startDate: { $lte: queryDate },
+          $or: [
+            { endDate: { $exists: false } },
+            { endDate: null },
+            { endDate: { $gte: queryDate } }
+          ]
+        },
+        {
+          isRecurring: false,
+          startDate: {
+            $gte: queryDate,
+            $lt: new Date(queryDate.getTime() + 24 * 60 * 60 * 1000)
+          }
+        }
+      ];
+    } else {
+        // If no specific date, just filter out non-recurring past classes
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+
+        query.$or = [
+          { isRecurring: true },
+          {
+            isRecurring: false,
+            startDate: { $gte: currentDate }
+          }
+        ];
     }
 
     const classes = await Class.find(query)

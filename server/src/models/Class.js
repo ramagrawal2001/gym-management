@@ -59,6 +59,16 @@ const classSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  startDate: {
+    type: Date,
+    required: [true, 'Class start date is required'],
+    default: Date.now
+  },
+  endDate: {
+    type: Date,
+    // Optional: if it's not recurring, this could just be the start date
+    // If it is recurring, it could have an expiration date
+  },
   isActive: {
     type: Boolean,
     default: true

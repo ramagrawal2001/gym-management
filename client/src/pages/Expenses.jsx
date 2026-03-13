@@ -38,6 +38,7 @@ const Expenses = () => {
     const [formData, setFormData] = useState({
         amount: '',
         categoryId: '',
+        categoryInput: '',
         description: '',
         expenseDate: new Date().toISOString().split('T')[0],
         paymentMethod: 'cash',
@@ -60,7 +61,18 @@ const Expenses = () => {
 
     const handleCreateExpense = async () => {
         try {
-            await dispatch(createExpense(formData)).unwrap();
+            let catId = formData.categoryId;
+            if (formData.categoryInput) {
+                const existingCat = categories.find(c => c.name.toLowerCase() === formData.categoryInput.toLowerCase().trim());
+                if (existingCat) {
+                    catId = existingCat._id;
+                } else {
+                    const newCatRes = await dispatch(createExpenseCategory({ name: formData.categoryInput.trim(), icon: '💰', color: '#3b82f6' })).unwrap();
+                    catId = newCatRes._id || newCatRes.data?._id;
+                }
+            }
+
+            await dispatch(createExpense({ ...formData, categoryId: catId })).unwrap();
             setShowExpenseModal(false);
             resetForm();
             dispatch(fetchExpenses(filters));
@@ -72,7 +84,18 @@ const Expenses = () => {
 
     const handleUpdateExpense = async () => {
         try {
-            await dispatch(updateExpense({ id: selectedExpense._id, data: formData })).unwrap();
+            let catId = formData.categoryId;
+            if (formData.categoryInput) {
+                const existingCat = categories.find(c => c.name.toLowerCase() === formData.categoryInput.toLowerCase().trim());
+                if (existingCat) {
+                    catId = existingCat._id;
+                } else {
+                    const newCatRes = await dispatch(createExpenseCategory({ name: formData.categoryInput.trim(), icon: '💰', color: '#3b82f6' })).unwrap();
+                    catId = newCatRes._id || newCatRes.data?._id;
+                }
+            }
+
+            await dispatch(updateExpense({ id: selectedExpense._id, data: { ...formData, categoryId: catId } })).unwrap();
             setShowExpenseModal(false);
             resetForm();
             setSelectedExpense(null);
@@ -130,6 +153,7 @@ const Expenses = () => {
         setFormData({
             amount: '',
             categoryId: '',
+            categoryInput: '',
             description: '',
             expenseDate: new Date().toISOString().split('T')[0],
             paymentMethod: 'cash',
@@ -143,6 +167,7 @@ const Expenses = () => {
         setFormData({
             amount: expense.amount,
             categoryId: expense.categoryId?._id || '',
+            categoryInput: expense.categoryId?.name || '',
             description: expense.description,
             expenseDate: new Date(expense.expenseDate).toISOString().split('T')[0],
             paymentMethod: expense.paymentMethod,
@@ -346,17 +371,19 @@ const Expenses = () => {
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-                        <select
-                            value={formData.categoryId}
-                            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                        <input
+                            list="expense-categories"
+                            value={formData.categoryInput}
+                            onChange={(e) => setFormData({ ...formData, categoryInput: e.target.value })}
+                            placeholder="Select or type a new category"
                             className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                             required
-                        >
-                            <option value="">Select Category</option>
+                        />
+                        <datalist id="expense-categories">
                             {categories.map(cat => (
-                                <option key={cat._id} value={cat._id}>{cat.icon} {cat.name}</option>
+                                <option key={cat._id} value={cat.name} />
                             ))}
-                        </select>
+                        </datalist>
                     </div>
                     <Input
                         label="Description"

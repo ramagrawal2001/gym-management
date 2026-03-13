@@ -7,7 +7,7 @@ import {
     deleteRevenue,
     fetchRevenueStats
 } from '../store/slices/revenueSlice';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Download } from 'lucide-react';
 import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -73,6 +73,40 @@ const Revenue = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!revenues || revenues.length === 0) return;
+        
+        const headers = ['Date', 'Description', 'Source', 'Amount'];
+        
+        const csvContent = [
+            headers.join(','),
+            ...revenues.map(r => {
+                const date = formatDate(r.revenueDate);
+                const desc = r.description || 'N/A';
+                const source = r.source.replace('_', ' ') || 'N/A';
+                const amount = r.amount || 0;
+                
+                const row = [
+                    `"${date}"`,
+                    `"${desc}"`,
+                    `"${source}"`,
+                    amount
+                ];
+                return row.join(',');
+            })
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `revenue_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const resetForm = () => {
         setFormData({
             amount: '',
@@ -103,10 +137,16 @@ const Revenue = () => {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Revenue</h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Track additional revenue sources</p>
                 </div>
-                <Button onClick={() => { resetForm(); setSelectedRevenue(null); setShowModal(true); }}>
-                    <Plus size={20} />
-                    Add Revenue
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleExport} disabled={revenues.length === 0}>
+                        <Download size={18} className="mr-2" />
+                        Export
+                    </Button>
+                    <Button onClick={() => { resetForm(); setSelectedRevenue(null); setShowModal(true); }}>
+                        <Plus size={20} />
+                        Add Revenue
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Cards */}

@@ -1,5 +1,7 @@
 import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
+import Revenue from '../models/Revenue.js';
+import RevenueSource from '../models/RevenueSource.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
 
 // @desc    Get member's own payments
@@ -25,7 +27,11 @@ export const getMyPayments = async (req, res) => {
     }
 
     const payments = await Payment.find(query)
-      .populate('invoiceId', 'invoiceNumber total')
+      .populate({
+        path: 'invoiceId',
+        select: 'invoiceNumber total planId',
+        populate: { path: 'planId', select: 'name' }
+      })
       .populate('memberId', 'memberId')
       .populate('memberId.userId', 'firstName lastName email')
       .skip(skip)
@@ -87,7 +93,11 @@ export const getPayments = async (req, res) => {
     }
 
     const payments = await Payment.find(query)
-      .populate('invoiceId', 'invoiceNumber total')
+      .populate({
+        path: 'invoiceId',
+        select: 'invoiceNumber total planId',
+        populate: { path: 'planId', select: 'name' }
+      })
       .populate('memberId', 'memberId')
       .populate('memberId.userId', 'firstName lastName email')
       .populate('gymId', 'name')
@@ -116,7 +126,11 @@ export const getPayments = async (req, res) => {
 export const getPayment = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id)
-      .populate('invoiceId', 'invoiceNumber total items')
+      .populate({
+        path: 'invoiceId',
+        select: 'invoiceNumber total items planId',
+        populate: { path: 'planId', select: 'name' }
+      })
       .populate('memberId', 'memberId userId')
       .populate('memberId.userId', 'firstName lastName email phone');
 
@@ -186,6 +200,40 @@ export const createPayment = async (req, res) => {
     invoice.paidAt = new Date();
     await invoice.save();
 
+    // Auto-calculate Revenue
+    try {
+        let source = await RevenueSource.findOne({ gymId, linkedModule: 'membership' });
+        if (!source) {
+            source = await RevenueSource.findOne({ gymId, name: 'Membership' });
+            if (!source) {
+                source = await RevenueSource.create({
+                    name: 'Membership',
+                    category: 'recurring',
+                    linkedModule: 'membership',
+                    isSystemSource: true,
+                    gymId,
+                    createdBy: req.user._id
+                });
+            }
+        }
+
+        await Revenue.create({
+            amount: payment.amount,
+            sourceId: source._id,
+            description: `Payment for Invoice #${invoice.invoiceNumber}`,
+            revenueDate: payment.paidAt,
+            gymId,
+            paymentId: payment._id,
+            memberId: payment.memberId,
+            createdBy: req.user._id,
+            generatedBy: 'system',
+            referenceType: 'payment',
+            referenceId: payment._id
+        });
+    } catch (revErr) {
+        console.error('Error auto-generating revenue from payment:', revErr);
+    }
+
     const populated = await Payment.findById(payment._id)
       .populate('invoiceId', 'invoiceNumber total')
       .populate('memberId', 'memberId')
@@ -220,6 +268,8 @@ export const updatePayment = async (req, res) => {
       }
     }
 
+    const oldStatus = payment.status;
+
     const updated = await Payment.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -227,6 +277,43 @@ export const updatePayment = async (req, res) => {
       .populate('invoiceId', 'invoiceNumber total')
       .populate('memberId', 'memberId')
       .populate('memberId.userId', 'firstName lastName email');
+
+    // Auto-calculate Revenue if status changed to completed
+    if (oldStatus !== 'completed' && updated.status === 'completed') {
+        try {
+            const invoice = await Invoice.findById(updated.invoiceId);
+            let source = await RevenueSource.findOne({ gymId: updated.gymId, linkedModule: 'membership' });
+            if (!source) {
+                source = await RevenueSource.findOne({ gymId: updated.gymId, name: 'Membership' });
+                if (!source) {
+                    source = await RevenueSource.create({
+                        name: 'Membership',
+                        category: 'recurring',
+                        linkedModule: 'membership',
+                        isSystemSource: true,
+                        gymId: updated.gymId,
+                        createdBy: req.user._id
+                    });
+                }
+            }
+
+            await Revenue.create({
+                amount: updated.amount,
+                sourceId: source._id,
+                description: `Payment for Invoice #${invoice ? invoice.invoiceNumber : 'Unknown'}`,
+                revenueDate: updated.paidAt || new Date(),
+                gymId: updated.gymId,
+                paymentId: updated._id,
+                memberId: updated.memberId,
+                createdBy: req.user._id,
+                generatedBy: 'system',
+                referenceType: 'payment',
+                referenceId: updated._id
+            });
+        } catch (revErr) {
+            console.error('Error auto-generating revenue on update:', revErr);
+        }
+    }
 
     sendSuccess(res, 'Payment updated successfully', updated);
   } catch (error) {
