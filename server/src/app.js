@@ -33,6 +33,7 @@ import faqRoutes from './routes/faqRoutes.js';
 import superAdminLeadRoutes from './routes/superAdminLeadRoutes.js';
 import workoutPlanRoutes from './routes/workoutPlanRoutes.js';
 import dietPlanRoutes from './routes/dietPlanRoutes.js';
+import systemSettingsRoutes from './routes/systemSettingsRoutes.js';
 import { handleRazorpayWebhook } from './controllers/subscriptionController.js';
 
 // Load environment variables
@@ -97,6 +98,7 @@ app.use('/api/v1/faqs', faqRoutes);
 app.use('/api/v1/super-admin/leads', superAdminLeadRoutes);
 app.use('/api/v1/workout-plans', workoutPlanRoutes);
 app.use('/api/v1/diet-plans', dietPlanRoutes);
+app.use('/api/v1/system-settings', systemSettingsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

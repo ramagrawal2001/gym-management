@@ -8,11 +8,14 @@ import * as gymService from '../services/gymService';
 import * as memberService from '../services/memberService';
 import * as staffService from '../services/staffService';
 import * as attendanceService from '../services/attendanceService';
+import * as notificationService from '../services/notificationService';
+import { getSystemSettings } from '../services/systemSettingsService';
 import { useNotification } from '../hooks/useNotification';
 import { formatDate } from '../utils/formatDate';
 import { formatCurrency } from '../utils/formatCurrency';
 import { useRole } from '../hooks/useRole';
 import { Navigate } from 'react-router-dom';
+import { MessageCircle, MessageSquare } from 'lucide-react';
 
 const GymDetails = () => {
     const { id } = useParams();
@@ -27,6 +30,12 @@ const GymDetails = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [attendanceConfig, setAttendanceConfig] = useState(null);
     const [selectedMethods, setSelectedMethods] = useState([]);
+    
+    // WhatsApp notification settings
+    const [notificationSettings, setNotificationSettings] = useState(null);
+    const [systemSettings, setSystemSettings] = useState(null);
+    const [isSavingWhatsApp, setIsSavingWhatsApp] = useState(false);
+    const [isSavingSms, setIsSavingSms] = useState(false);
 
     const availableAttendanceMethods = [
         { id: 'manual', name: 'Manual', icon: ClipboardList, description: 'Staff manually marks attendance' },
@@ -92,10 +101,137 @@ const GymDetails = () => {
                 console.error('Error loading attendance config:', error);
                 setSelectedMethods(['manual']);
             }
+
+            // Load Notification Settings
+            try {
+                const notifSettings = await notificationService.getSettings(id);
+                setNotificationSettings(notifSettings);
+                const sysSettings = await getSystemSettings();
+                setSystemSettings(sysSettings);
+            } catch (error) {
+                console.error('Error loading notification settings:', error);
+            }
         } catch (error) {
             showError('Failed to load gym details');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Events that can be controlled via WhatsApp
+    const availableWhatsAppEvents = [
+        { id: 'welcome', label: 'Welcome Message' },
+        { id: 'subscription_purchased', label: 'Subscription Purchased' },
+        { id: 'membership_expiry_warning', label: 'Membership Expiry Warning' },
+        { id: 'membership_expired', label: 'Membership Expired' },
+        { id: 'payment_reminder', label: 'Payment Reminder' },
+        { id: 'payment_received', label: 'Payment Received' },
+        { id: 'birthday', label: 'Birthday Greeting' },
+        { id: 'class_reminder', label: 'Class Reminder' },
+        { id: 'otp', label: 'OTP' },
+        { id: 'announcement', label: 'Announcement' },
+        { id: 'general', label: 'General' }
+    ];
+
+    const handleWhatsAppToggle = (eventId) => {
+        if (!notificationSettings) return;
+
+        const currentAllowed = notificationSettings.channels?.whatsapp?.allowedEvents || [];
+        const isCurrentlyAllowed = currentAllowed.includes(eventId);
+
+        let newAllowed;
+        if (isCurrentlyAllowed) {
+            newAllowed = currentAllowed.filter(e => e !== eventId);
+        } else {
+            newAllowed = [...currentAllowed, eventId];
+        }
+
+        setNotificationSettings({
+            ...notificationSettings,
+            channels: {
+                ...notificationSettings.channels,
+                whatsapp: {
+                    ...notificationSettings.channels?.whatsapp,
+                    allowedEvents: newAllowed
+                }
+            }
+        });
+    };
+
+    const handleSaveWhatsAppSettings = async () => {
+        setIsSavingWhatsApp(true);
+        try {
+            const updates = {
+                gymId: id,
+                channels: {
+                    ...notificationSettings.channels,
+                    whatsapp: {
+                        ...notificationSettings.channels?.whatsapp,
+                        allowedEvents: notificationSettings.channels?.whatsapp?.allowedEvents || []
+                    }
+                }
+            };
+            const response = await notificationService.updateSettings(updates);
+            if (response.settings) {
+                setNotificationSettings(response.settings);
+                showSuccess('WhatsApp capabilities updated successfully');
+            }
+        } catch (error) {
+            console.error('Error saving WhatsApp settings:', error);
+            showError('Failed to update WhatsApp settings');
+        } finally {
+            setIsSavingWhatsApp(false);
+        }
+    };
+
+    const handleSmsToggle = (eventId) => {
+        if (!notificationSettings) return;
+
+        const currentAllowed = notificationSettings.channels?.sms?.allowedEvents || [];
+        const isCurrentlyAllowed = currentAllowed.includes(eventId);
+
+        let newAllowed;
+        if (isCurrentlyAllowed) {
+            newAllowed = currentAllowed.filter(e => e !== eventId);
+        } else {
+            newAllowed = [...currentAllowed, eventId];
+        }
+
+        setNotificationSettings({
+            ...notificationSettings,
+            channels: {
+                ...notificationSettings.channels,
+                sms: {
+                    ...notificationSettings.channels?.sms,
+                    allowedEvents: newAllowed
+                }
+            }
+        });
+    };
+
+    const handleSaveSmsSettings = async () => {
+        setIsSavingSms(true);
+        try {
+            const updates = {
+                gymId: id,
+                channels: {
+                    ...notificationSettings.channels,
+                    sms: {
+                        ...notificationSettings.channels?.sms,
+                        allowedEvents: notificationSettings.channels?.sms?.allowedEvents || []
+                    }
+                }
+            };
+            const response = await notificationService.updateSettings(updates);
+            if (response.settings) {
+                setNotificationSettings(response.settings);
+                showSuccess('SMS capabilities updated successfully');
+            }
+        } catch (error) {
+            console.error('Error saving SMS settings:', error);
+            showError('Failed to update SMS settings');
+        } finally {
+            setIsSavingSms(false);
         }
     };
 
@@ -304,6 +440,96 @@ const GymDetails = () => {
                     </div>
                 )}
             </div>
+
+            {/* WhatsApp Capabilities Configuration */}
+            {systemSettings?.whatsappFeatureEnabled && notificationSettings && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <MessageCircle className="text-green-500" size={24} />
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">WhatsApp Capabilities</h2>
+                        </div>
+                        <Button onClick={handleSaveWhatsAppSettings} disabled={isSavingWhatsApp}>
+                            {isSavingWhatsApp ? 'Saving...' : 'Save Settings'}
+                        </Button>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Select which WhatsApp notification events the Gym Owner is allowed to enable and use.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {availableWhatsAppEvents.map((event) => {
+                            const allowedEvents = notificationSettings.channels?.whatsapp?.allowedEvents || [];
+                            const isAllowed = allowedEvents.includes(event.id);
+                            
+                            return (
+                                <div
+                                    key={event.id}
+                                    onClick={() => handleWhatsAppToggle(event.id)}
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${
+                                        isAllowed
+                                            ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
+                                            : 'border-gray-200 dark:border-slate-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {event.label}
+                                    </span>
+                                    <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${
+                                        isAllowed ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-slate-600'
+                                    }`}>
+                                        {isAllowed && <span className="text-white text-[10px] leading-none">✓</span>}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* SMS Capabilities Configuration */}
+            {notificationSettings && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 mb-8 mt-8">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <MessageSquare className="text-blue-500" size={24} />
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">SMS Capabilities</h2>
+                        </div>
+                        <Button onClick={handleSaveSmsSettings} disabled={isSavingSms}>
+                            {isSavingSms ? 'Saving...' : 'Save Settings'}
+                        </Button>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Select which SMS notification events the Gym Owner is allowed to enable and use.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {availableWhatsAppEvents.map((event) => {
+                            const allowedEvents = notificationSettings.channels?.sms?.allowedEvents || [];
+                            const isAllowed = allowedEvents.includes(event.id);
+                            
+                            return (
+                                <div
+                                    key={event.id}
+                                    onClick={() => handleSmsToggle(event.id)}
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${
+                                        isAllowed
+                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'
+                                            : 'border-gray-200 dark:border-slate-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {event.label}
+                                    </span>
+                                    <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${
+                                        isAllowed ? 'bg-blue-500 border-blue-500' : 'border-gray-300 dark:border-slate-600'
+                                    }`}>
+                                        {isAllowed && <span className="text-white text-[10px] leading-none">✓</span>}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Members */}
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">

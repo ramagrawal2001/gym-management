@@ -10,9 +10,12 @@ import { useRole } from '../hooks/useRole';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatDate } from '../utils/formatDate';
 import { formatCurrency } from '../utils/formatCurrency';
+import { useNotification } from '../hooks/useNotification';
+import { Bell } from 'lucide-react';
 
 const Payments = () => {
     const { isSuperAdmin } = useRole();
+    const { success: showSuccess, error: showError } = useNotification();
     const [payments, setPayments] = useState([]);
     const [gyms, setGyms] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -101,6 +104,16 @@ const Payments = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleRemind = async (paymentId) => {
+        try {
+            await paymentService.remindPayment(paymentId);
+            showSuccess('Payment reminder sent to member via configured channels');
+        } catch (error) {
+            console.error('Failed to send reminder:', error);
+            showError(error.response?.data?.message || 'Failed to send payment reminder');
+        }
     };
 
     const getStatusVariant = (status) => {
@@ -245,7 +258,18 @@ const Payments = () => {
                                                 {payment.status || 'Pending'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right flex justify-end gap-2">
+                                            {(payment.status === 'pending' || payment.status === 'failed') && (
+                                                <Button 
+                                                    variant="secondary" 
+                                                    size="sm" 
+                                                    onClick={() => handleRemind(payment._id)}
+                                                    title="Send Reminder Alert"
+                                                >
+                                                    <Bell size={14} className="mr-1" />
+                                                    Remind
+                                                </Button>
+                                            )}
                                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                                                 View
                                             </Button>

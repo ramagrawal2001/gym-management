@@ -45,13 +45,53 @@ const notificationSettingsSchema = new mongoose.Schema({
             credentials: {
                 apiKey: String,
                 senderId: String
-            }
+            },
+            // Events that the super admin has allowed this gym to send via SMS
+            allowedEvents: [{
+                type: String,
+                enum: [
+                    'welcome',
+                    'subscription_purchased',
+                    'membership_expiry_warning',
+                    'membership_expired',
+                    'payment_reminder',
+                    'payment_received',
+                    'birthday',
+                    'announcement',
+                    'class_reminder',
+                    'otp',
+                    'general'
+                ]
+            }]
         },
         inApp: {
             enabled: {
                 type: Boolean,
                 default: true
             }
+        },
+        whatsapp: {
+            enabled: {
+                type: Boolean,
+                default: false
+            },
+            // Events that the super admin has allowed this gym to send via WhatsApp
+            allowedEvents: [{
+                type: String,
+                enum: [
+                    'welcome',
+                    'subscription_purchased',
+                    'membership_expiry_warning',
+                    'membership_expired',
+                    'payment_reminder',
+                    'payment_received',
+                    'birthday',
+                    'announcement',
+                    'class_reminder',
+                    'otp',
+                    'general'
+                ]
+            }]
         }
     },
 
@@ -61,37 +101,50 @@ const notificationSettingsSchema = new mongoose.Schema({
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
             inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false },
             daysBeforeExpiry: { type: Number, default: 7 }
         },
         membership_expired: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
-            inApp: { type: Boolean, default: true }
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         },
         payment_reminder: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
-            inApp: { type: Boolean, default: true }
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         },
         payment_received: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: false },
-            inApp: { type: Boolean, default: true }
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         },
         welcome: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
-            inApp: { type: Boolean, default: true }
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         },
         birthday: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
-            inApp: { type: Boolean, default: true }
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         },
         otp: {
             email: { type: Boolean, default: true },
             sms: { type: Boolean, default: true },
-            inApp: { type: Boolean, default: false }
+            inApp: { type: Boolean, default: false },
+            whatsapp: { type: Boolean, default: false }
+        },
+        subscription_purchased: {
+            email: { type: Boolean, default: true },
+            sms: { type: Boolean, default: true },
+            inApp: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: false }
         }
     },
 

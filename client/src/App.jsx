@@ -40,6 +40,8 @@ import WorkoutPlans from './pages/WorkoutPlans';
 import DietPlans from './pages/DietPlans';
 import MemberWorkoutPlan from './pages/member/MemberWorkoutPlan';
 import MemberDietPlan from './pages/member/MemberDietPlan';
+import NotificationSettings from './pages/settings/NotificationSettings';
+import SystemSettings from './pages/super-admin/SystemSettings';
 import { getCurrentUser } from './store/slices/authSlice';
 import { getGym } from './store/slices/gymSlice';
 import { useAuth } from './hooks/useAuth';
@@ -119,6 +121,16 @@ function AppRoutes() {
                     element={
                         <RoleGuard allowedRoles={['super_admin']}>
                             <LeadCRM />
+                        </RoleGuard>
+                    }
+                />
+
+                {/* System Settings - Super Admin Only */}
+                <Route
+                    path="super-admin/system-config"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin']}>
+                            <SystemSettings />
                         </RoleGuard>
                     }
                 />
@@ -296,6 +308,18 @@ function AppRoutes() {
                         <RoleGuard allowedRoles={['super_admin', 'owner']}>
                             <SubscriptionGuard>
                                 <Settings />
+                            </SubscriptionGuard>
+                        </RoleGuard>
+                    }
+                />
+
+                {/* Notification Settings - Super Admin and Owner only */}
+                <Route
+                    path="notification-settings"
+                    element={
+                        <RoleGuard allowedRoles={['super_admin', 'owner']}>
+                            <SubscriptionGuard>
+                                <NotificationSettings />
                             </SubscriptionGuard>
                         </RoleGuard>
                     }

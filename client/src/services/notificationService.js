@@ -50,8 +50,9 @@ export const markAllAsRead = async () => {
 /**
  * Get notification settings
  */
-export const getSettings = async () => {
-    const response = await api.get('/notifications/settings');
+export const getSettings = async (gymId = null) => {
+    const params = gymId ? { gymId } : {};
+    const response = await api.get('/notifications/settings', { params });
     return response.data;
 };
 

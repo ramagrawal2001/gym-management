@@ -91,7 +91,7 @@ export const markAllAsRead = async (req, res) => {
  */
 export const getSettings = async (req, res) => {
     try {
-        const gymId = req.user.gymId || req.params.gymId;
+        const gymId = req.user.gymId || req.query.gymId || req.params.gymId;
 
         const settings = await NotificationSettings.getOrCreate(gymId);
 
@@ -107,8 +107,41 @@ export const getSettings = async (req, res) => {
  */
 export const updateSettings = async (req, res) => {
     try {
-        const gymId = req.user.gymId || req.params.gymId;
+        const gymId = req.user.gymId || req.body.gymId || req.params.gymId;
         const updates = req.body;
+
+        // Security check: Only super_admin can modify whatsapp and sms allowedEvents
+        if (req.user.role !== 'super_admin') {
+            if (updates.channels?.whatsapp || updates.channels?.sms) {
+                // Fetch existing to preserve allowedEvents, prevents $set from erasing it when we delete the key
+                const existingSettings = await NotificationSettings.findOne({ gymId });
+                
+                // Preserve WhatsApp
+                if (updates.channels?.whatsapp) {
+                    if (existingSettings?.channels?.whatsapp?.allowedEvents) {
+                        updates.channels.whatsapp.allowedEvents = existingSettings.channels.whatsapp.allowedEvents;
+                    } else {
+                        delete updates.channels.whatsapp.allowedEvents;
+                    }
+                }
+                
+                // Preserve SMS
+                if (updates.channels?.sms) {
+                    if (existingSettings?.channels?.sms?.allowedEvents) {
+                        updates.channels.sms.allowedEvents = existingSettings.channels.sms.allowedEvents;
+                    } else {
+                        delete updates.channels.sms.allowedEvents;
+                    }
+                }
+            }
+            // If they sent flat keys
+            if (updates['channels.whatsapp.allowedEvents']) {
+                delete updates['channels.whatsapp.allowedEvents'];
+            }
+            if (updates['channels.sms.allowedEvents']) {
+                delete updates['channels.sms.allowedEvents'];
+            }
+        }
 
         const settings = await NotificationSettings.findOneAndUpdate(
             { gymId },
@@ -151,7 +184,7 @@ export const getTemplates = async (req, res) => {
 export const saveTemplate = async (req, res) => {
     try {
         const gymId = req.user.gymId;
-        const { type, name, channels, email, sms, inApp, variables, isActive } = req.body;
+        const { type, name, channels, email, sms, inApp, whatsapp, variables, isActive } = req.body;
 
         const template = await NotificationTemplate.findOneAndUpdate(
             { gymId, type },
@@ -163,6 +196,7 @@ export const saveTemplate = async (req, res) => {
                 email,
                 sms,
                 inApp,
+                whatsapp,
                 variables,
                 isActive
             },

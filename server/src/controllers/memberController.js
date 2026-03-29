@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import { sendSuccess, sendError, sendCreated } from '../utils/responseFormatter.js';
 import { uploadFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/uploadService.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Get member's own profile
 // @route   GET /api/v1/members/me
@@ -273,6 +274,11 @@ export const createMember = async (req, res) => {
       { path: 'assignedDietPlan', select: 'name' }
     ]);
 
+    // Fire welcome notification asynchronously
+    notificationService.sendWelcomeNotification(gymId, populated).catch(e => {
+      console.error('Error sending welcome notification:', e);
+    });
+
     sendCreated(res, 'Member created successfully', populated);
   } catch (error) {
     // Catch duplicate email error from User model
@@ -415,7 +421,17 @@ export const renewMember = async (req, res) => {
 
     const populated = await Member.findById(member._id)
       .populate('userId', 'email firstName lastName phone avatar')
-      .populate('planId', 'name price duration');
+      .populate('planId', 'name price duration')
+      .populate('gymId', 'name');
+
+    // Fire subscription purchased notification asynchronously
+    notificationService.sendSubscriptionPurchased(member.gymId, populated, {
+      planName: populated.planId?.name,
+      amount: populated.planId?.price,
+      endDate: endDate.toLocaleDateString()
+    }).catch(e => {
+      console.error('Error sending subscription purchased notification:', e);
+    });
 
     sendSuccess(res, 'Member subscription renewed successfully', populated);
   } catch (error) {

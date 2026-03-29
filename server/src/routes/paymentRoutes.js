@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMyPayments, getPayments, getPayment, createPayment, updatePayment, deletePayment } from '../controllers/paymentController.js';
+import { getMyPayments, getPayments, getPayment, createPayment, updatePayment, deletePayment, sendPaymentReminderAlert } from '../controllers/paymentController.js';
 import { authenticate } from '../middleware/auth.js';
 import { enforceGymScope, enforceMemberScope } from '../middleware/gymScope.js';
 import { ownerOrSuperAdmin, memberOnly } from '../middleware/rbac.js';
@@ -22,6 +22,7 @@ router.get('/', getPayments);
 router.get('/:id', getPayment);
 router.post('/', ownerOrSuperAdmin, createPayment);
 router.put('/:id', ownerOrSuperAdmin, updatePayment);
+router.post('/:id/remind', ownerOrSuperAdmin, sendPaymentReminderAlert);
 router.delete('/:id', ownerOrSuperAdmin, deletePayment);
 
 export default router;

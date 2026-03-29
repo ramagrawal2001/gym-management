@@ -27,7 +27,8 @@ const notificationTemplateSchema = new mongoose.Schema({
             'announcement',
             'class_reminder',
             'otp',
-            'general'
+            'general',
+            'subscription_purchased'
         ],
         required: true
     },
@@ -41,7 +42,7 @@ const notificationTemplateSchema = new mongoose.Schema({
     // Channels this template is enabled for
     channels: [{
         type: String,
-        enum: ['email', 'sms', 'in_app']
+        enum: ['email', 'sms', 'in_app', 'whatsapp']
     }],
 
     // Email template
@@ -64,6 +65,13 @@ const notificationTemplateSchema = new mongoose.Schema({
         templateId: {
             type: String, // DLT Template ID for 2Factor
             trim: true
+        }
+    },
+
+    // WhatsApp template
+    whatsapp: {
+        body: {
+            type: String
         }
     },
 
@@ -133,12 +141,25 @@ notificationTemplateSchema.methods.render = function (channel, data) {
     if (channel === 'email' && this.email) {
         content.subject = this.replaceVariables(this.email.subject, data);
         content.body = this.replaceVariables(this.email.body, data);
+        if (data.actionUrl && !content.body.includes(data.actionUrl)) {
+            content.body += `<br><br><a href="${data.actionUrl}" style="color: #2563eb; text-decoration: underline;">Click here to view</a>`;
+        }
     } else if (channel === 'sms' && this.sms) {
         content.body = this.replaceVariables(this.sms.body, data);
         content.templateId = this.sms.templateId;
+        // Only append to raw SMS body if we don't have a strict DLT template ID
+        if (!content.templateId && data.actionUrl && !content.body.includes(data.actionUrl)) {
+            content.body += `\nLink: ${data.actionUrl}`;
+        }
     } else if (channel === 'in_app' && this.inApp) {
         content.title = this.replaceVariables(this.inApp.title, data);
         content.body = this.replaceVariables(this.inApp.body, data);
+        // Action URL for in-app is usually passed separately in metadata, handled by service
+    } else if (channel === 'whatsapp' && this.whatsapp) {
+        content.body = this.replaceVariables(this.whatsapp.body, data);
+        if (data.actionUrl && !content.body.includes(data.actionUrl)) {
+            content.body += `\n\nLink: ${data.actionUrl}`;
+        }
     }
 
     return content;

@@ -26,3 +26,8 @@ export const deletePayment = async (paymentId) => {
   return response;
 };
 
+export const remindPayment = async (paymentId) => {
+  const response = await api.post(`${API_ENDPOINTS.PAYMENTS.BASE}/${paymentId}/remind`);
+  return response;
+};
+

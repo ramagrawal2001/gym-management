@@ -348,3 +348,39 @@ export const deletePayment = async (req, res) => {
   }
 };
 
+// @desc    Send Payment Reminder Alert
+// @route   POST /api/v1/payments/:id/remind
+// @access  Private (Owner or Super Admin)
+export const sendPaymentReminderAlert = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id)
+      .populate('memberId')
+      .populate('invoiceId')
+      .populate('gymId');
+
+    if (!payment) {
+      return sendError(res, 404, 'Payment not found');
+    }
+
+    if (payment.status !== 'pending' && payment.status !== 'failed') {
+      return sendError(res, 400, 'Reminders can only be sent for pending or failed payments');
+    }
+
+    const { sendPaymentReminder } = await import('../services/notificationService.js');
+    
+    // dueDate logic: If there's an invoice, maybe it has a dueDate. Otherwise just use payment createdAt.
+    const dueDate = payment.invoiceId?.dueDate || payment.createdAt;
+
+    await sendPaymentReminder(
+        payment.gymId._id, 
+        payment.memberId, 
+        dueDate, 
+        payment.amount
+    );
+
+    sendSuccess(res, 'Payment reminder sent successfully');
+  } catch (error) {
+    sendError(res, 500, 'Failed to send payment reminder', error.message);
+  }
+};
+

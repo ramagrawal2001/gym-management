@@ -18,7 +18,9 @@ import {
     FileQuestion,
     Shield,
     ClipboardList,
-    Apple
+    Apple,
+    Bell,
+    ServerCog
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRole } from '../hooks/useRole';
@@ -47,6 +49,7 @@ const Sidebar = () => {
         { icon: Building2, label: 'Gyms', path: '/gyms', roles: ['super_admin'] },
         { icon: Receipt, label: 'Subscription Plans', path: '/subscription-plans', roles: ['super_admin'] },
         { icon: Users, label: 'Lead CRM', path: '/super-admin/leads', roles: ['super_admin'] },
+        { icon: ServerCog, label: 'System Config', path: '/super-admin/system-config', roles: ['super_admin'] },
 
         // Gym Owner - My Subscription (always visible for owners)
         { icon: Receipt, label: 'My Subscription', path: '/my-subscription', roles: ['owner'] },
@@ -79,6 +82,7 @@ const Sidebar = () => {
         { icon: ClipboardList, label: 'Workout Plans', path: '/workout-plans', feature: 'memberLogin', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
         { icon: Apple, label: 'Diet Plans', path: '/diet-plans', feature: 'memberLogin', roles: ['super_admin', 'owner', 'staff'], requiresSubscription: true },
         { icon: FileQuestion, label: 'FAQ Management', path: '/faq-management', roles: ['super_admin', 'owner'], requiresSubscription: true },
+        { icon: Bell, label: 'Notifications', path: '/notification-settings', roles: ['super_admin', 'owner'], requiresSubscription: true },
         { icon: Settings, label: 'Settings', path: '/settings', roles: ['super_admin', 'owner'], requiresSubscription: true },
     ];
 

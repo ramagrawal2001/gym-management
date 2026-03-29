@@ -4,6 +4,8 @@ import NotificationSettings from '../models/NotificationSettings.js';
 import { sendEmail } from './emailService.js';
 import smsService from './smsService.js';
 import inAppService from './inAppNotificationService.js';
+import wapiService from './wapiService.js';
+import SystemSettings from '../models/SystemSettings.js';
 
 /**
  * Central Notification Orchestrator
@@ -32,8 +34,11 @@ export const sendNotification = async ({
     };
 
     try {
-        // Get notification settings for this gym
-        const settings = await NotificationSettings.getOrCreate(gymId);
+        // Get notification settings and system settings
+        const [settings, sysSettings] = await Promise.all([
+            NotificationSettings.getOrCreate(gymId),
+            SystemSettings.getSettings()
+        ]);
 
         // Get template for this notification type
         const template = await NotificationTemplate.getTemplate(type, gymId);
@@ -44,7 +49,7 @@ export const sendNotification = async ({
         }
 
         // Determine which channels to use
-        const enabledChannels = channels || getEnabledChannels(settings, type);
+        const enabledChannels = channels || getEnabledChannels(settings, type, sysSettings);
 
         // Send through each enabled channel
         for (const channel of enabledChannels) {
@@ -84,12 +89,27 @@ export const sendNotification = async ({
 /**
  * Get enabled channels for a notification type
  */
-const getEnabledChannels = (settings, type) => {
+const getEnabledChannels = (settings, type, sysSettings) => {
     const channels = [];
 
     if (settings.isChannelEnabled('email', type)) channels.push('email');
-    if (settings.isChannelEnabled('sms', type)) channels.push('sms');
     if (settings.isChannelEnabled('inApp', type)) channels.push('in_app');
+
+    // For SMS, we check if super admin has allowed this event
+    if (settings.isChannelEnabled('sms', type)) {
+        const allowedSmsEvents = settings.channels?.sms?.allowedEvents || [];
+        if (allowedSmsEvents.includes(type)) {
+            channels.push('sms');
+        }
+    }
+
+    // For WhatsApp, we check if global feature is enabled and super admin has allowed this event
+    if (sysSettings?.whatsappFeatureEnabled && settings.isChannelEnabled('whatsapp', type)) {
+        const allowedEvents = settings.channels?.whatsapp?.allowedEvents || [];
+        if (allowedEvents.includes(type)) {
+            channels.push('whatsapp');
+        }
+    }
 
     return channels;
 };
@@ -107,6 +127,9 @@ const sendViaChannel = async (channel, { gymId, type, recipient, data, template,
 
         case 'in_app':
             return await sendInAppNotification(gymId, recipient, data, template, type);
+
+        case 'whatsapp':
+            return await sendWhatsAppNotification(recipient, data, template);
 
         default:
             return { success: false, error: `Unknown channel: ${channel}` };
@@ -131,6 +154,9 @@ const sendEmailNotification = async (recipient, data, template) => {
         // Fallback to basic message
         subject = data.subject || 'Notification from GymOS';
         body = data.message || 'You have a new notification.';
+        if (data.actionUrl) {
+            body += `<br><br><a href="${data.actionUrl}">Click here to view</a>`;
+        }
     }
 
     const result = await sendEmail(recipient.email, subject, body);
@@ -162,6 +188,9 @@ const sendSMSNotification = async (recipient, data, template, settings) => {
         templateId = rendered.templateId;
     } else {
         message = data.message || 'You have a notification from GymOS.';
+        if (data.actionUrl) {
+            message += `\nLink: ${data.actionUrl}`;
+        }
     }
 
     // Use transactional SMS if we have a template ID
@@ -204,6 +233,29 @@ const sendInAppNotification = async (gymId, recipient, data, template, type) => 
 };
 
 /**
+ * Send WhatsApp notification
+ */
+const sendWhatsAppNotification = async (recipient, data, template) => {
+    if (!recipient.phone) {
+        return { success: false, error: 'No phone number provided' };
+    }
+
+    let message;
+
+    if (template && template.whatsapp && template.whatsapp.body) {
+        const rendered = template.render('whatsapp', data);
+        message = rendered.body;
+    } else {
+        message = data.message || 'You have a notification from GymOS.';
+        if (data.actionUrl) {
+            message += `\nLink: ${data.actionUrl}`;
+        }
+    }
+
+    return await wapiService.sendMessage(recipient.phone, message);
+};
+
+/**
  * Log notification for tracking
  */
 const logNotification = async (gymId, type, recipient, results) => {
@@ -237,6 +289,7 @@ export const sendOTP = async (gymId, recipient, otp, role = null) => {
  * Send membership expiry warning
  */
 export const sendMembershipExpiryWarning = async (gymId, member, daysRemaining) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     return await sendNotification({
         gymId,
         type: 'membership_expiry_warning',
@@ -250,7 +303,8 @@ export const sendMembershipExpiryWarning = async (gymId, member, daysRemaining) 
             memberName: member.name,
             daysRemaining,
             expiryDate: member.membershipEndDate,
-            gymName: member.gym?.name || 'Your Gym'
+            gymName: member.gym?.name || 'Your Gym',
+            actionUrl: `${clientUrl}/member/dashboard` // Or payments to renew
         }
     });
 };
@@ -259,6 +313,7 @@ export const sendMembershipExpiryWarning = async (gymId, member, daysRemaining) 
  * Send payment received notification
  */
 export const sendPaymentReceived = async (gymId, member, amount, paymentId) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     return await sendNotification({
         gymId,
         type: 'payment_received',
@@ -272,7 +327,32 @@ export const sendPaymentReceived = async (gymId, member, amount, paymentId) => {
             memberName: member.name,
             amount: `₹${amount}`,
             paymentId,
-            date: new Date().toLocaleDateString('en-IN')
+            date: new Date().toLocaleDateString('en-IN'),
+            actionUrl: `${clientUrl}/member/payments`
+        }
+    });
+};
+
+/**
+ * Send payment reminder notification
+ */
+export const sendPaymentReminder = async (gymId, member, dueDate, amountDue) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    return await sendNotification({
+        gymId,
+        type: 'payment_reminder',
+        recipient: {
+            memberId: member._id,
+            email: member.email,
+            phone: member.phone,
+            name: member.name
+        },
+        data: {
+            memberName: member.name,
+            gymName: member.gym?.name || 'Your Gym',
+            dueDate: new Date(dueDate).toLocaleDateString('en-IN'),
+            amountDue: `₹${amountDue}`,
+            actionUrl: `${clientUrl}/login`
         }
     });
 };
@@ -281,6 +361,7 @@ export const sendPaymentReceived = async (gymId, member, amount, paymentId) => {
  * Send welcome notification
  */
 export const sendWelcomeNotification = async (gymId, member) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     return await sendNotification({
         gymId,
         type: 'welcome',
@@ -292,7 +373,33 @@ export const sendWelcomeNotification = async (gymId, member) => {
         },
         data: {
             memberName: member.name,
-            gymName: member.gym?.name || 'Your Gym'
+            gymName: member.gym?.name || 'Your Gym',
+            actionUrl: `${clientUrl}/login`
+        }
+    });
+};
+
+/**
+ * Send subscription purchased notification
+ */
+export const sendSubscriptionPurchased = async (gymId, member, details) => {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    return await sendNotification({
+        gymId,
+        type: 'subscription_purchased',
+        recipient: {
+            memberId: member._id,
+            email: member.email,
+            phone: member.phone,
+            name: member.name
+        },
+        data: {
+            memberName: member.name,
+            gymName: member.gym?.name || 'Your Gym',
+            planName: details.planName || 'your new plan',
+            amount: `₹${details.amount}`,
+            endDate: details.endDate,
+            actionUrl: `${clientUrl}/member/payments`
         }
     });
 };
@@ -302,5 +409,7 @@ export default {
     sendOTP,
     sendMembershipExpiryWarning,
     sendPaymentReceived,
-    sendWelcomeNotification
+    sendPaymentReminder,
+    sendWelcomeNotification,
+    sendSubscriptionPurchased
 };
