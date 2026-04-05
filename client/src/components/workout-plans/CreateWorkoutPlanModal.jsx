@@ -28,8 +28,8 @@ const CreateWorkoutPlanModal = ({ isOpen, onClose, onSuccess, plan = null, gymId
         }
     }, [isOpen, plan, reset]);
 
-    const handleAddExercise = () => {
-        setExercises([...exercises, { name: '', sets: 3, reps: '10', weight: '', dayOfWeek: 'Monday', notes: '' }]);
+    const handleAddExercise = (day = 'Monday') => {
+        setExercises([...exercises, { name: '', sets: 3, reps: '10', weight: '', dayOfWeek: day, notes: '' }]);
     };
 
     const handleRemoveExercise = (index) => {
@@ -47,9 +47,14 @@ const CreateWorkoutPlanModal = ({ isOpen, onClose, onSuccess, plan = null, gymId
             setIsSubmitting(true);
             setError('');
 
+            const cleanedExercises = exercises.map(ex => ({
+                ...ex,
+                sets: ex.sets === '' ? undefined : Number(ex.sets)
+            }));
+
             const payload = {
                 ...data,
-                exercises,
+                exercises: cleanedExercises,
                 ...(gymId && { gymId })
             };
 
@@ -125,87 +130,98 @@ const CreateWorkoutPlanModal = ({ isOpen, onClose, onSuccess, plan = null, gymId
                             </div>
                         </div>
 
-                        <div>
-                            <div className="flex items-center justify-between mb-4 mt-6">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Exercises</h3>
-                                <Button type="button" variant="outline" size="sm" onClick={handleAddExercise}>
-                                    <Plus size={16} className="mr-2" /> Add Exercise
-                                </Button>
-                            </div>
-
-                            {exercises.length === 0 ? (
-                                <p className="text-sm text-gray-500 dark:text-gray-400 italic py-4">No exercises added yet.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {exercises.map((ex, index) => (
-                                        <div key={index} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 relative">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveExercise(index)}
-                                                className="absolute top-4 right-4 text-red-500 hover:text-red-700"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Day of Week</label>
-                                                    <select
-                                                        value={ex.dayOfWeek}
-                                                        onChange={(e) => handleExerciseChange(index, 'dayOfWeek', e.target.value)}
-                                                        className="w-full rounded-lg border-gray-300 dark:border-slate-700 dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                                    >
-                                                        {days.map(d => <option key={d} value={d}>{d}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className="md:col-span-2">
-                                                    <Input
-                                                        label="Exercise Name"
-                                                        value={ex.name}
-                                                        onChange={(e) => handleExerciseChange(index, 'name', e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Input
-                                                        label="Sets"
-                                                        type="number"
-                                                        min="1"
-                                                        value={ex.sets}
-                                                        onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Input
-                                                        label="Reps"
-                                                        value={ex.reps}
-                                                        onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)}
-                                                        placeholder="e.g. 10-12"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Input
-                                                        label="Weight (Optional)"
-                                                        value={ex.weight || ''}
-                                                        onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)}
-                                                        placeholder="e.g. 20kg"
-                                                    />
-                                                </div>
-                                                <div className="md:col-span-4">
-                                                    <Input
-                                                        label="Notes (Optional)"
-                                                        value={ex.notes || ''}
-                                                        onChange={(e) => handleExerciseChange(index, 'notes', e.target.value)}
-                                                        placeholder="e.g. Keep back straight"
-                                                    />
-                                                </div>
-                                            </div>
+                        <div className="mt-8">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-slate-800 pb-2 mb-6">Exercises by Day</h3>
+                            {days.map(day => {
+                                const dayExercises = exercises.filter(e => e.dayOfWeek === day);
+                                return (
+                                    <div key={day} className="mb-6 bg-gray-50/50 dark:bg-slate-800/30 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h4 className="text-md font-bold text-gray-800 dark:text-gray-200">{day}</h4>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => handleAddExercise(day)}>
+                                                <Plus size={16} className="mr-2" /> Add Exercise
+                                            </Button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+
+                                        {dayExercises.length === 0 ? (
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 italic py-2">Rest day or no exercises specified.</p>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {exercises.map((ex, index) => {
+                                                    if (ex.dayOfWeek !== day) return null;
+                                                    return (
+                                                        <div key={index} className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm relative">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveExercise(index)}
+                                                                className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
+                                                                <div className="md:col-span-2">
+                                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Day of Week</label>
+                                                                    <select
+                                                                        value={ex.dayOfWeek}
+                                                                        onChange={(e) => handleExerciseChange(index, 'dayOfWeek', e.target.value)}
+                                                                        className="w-full rounded-lg border-gray-300 dark:border-slate-700 dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                                                    >
+                                                                        {days.map(d => <option key={d} value={d}>{d}</option>)}
+                                                                    </select>
+                                                                </div>
+                                                                <div className="md:col-span-2">
+                                                                    <Input
+                                                                        label="Exercise Name"
+                                                                        value={ex.name}
+                                                                        onChange={(e) => handleExerciseChange(index, 'name', e.target.value)}
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Input
+                                                                        label="Sets"
+                                                                        type="number"
+                                                                        min="1"
+                                                                        value={ex.sets}
+                                                                        onChange={(e) => handleExerciseChange(index, 'sets', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Input
+                                                                        label="Reps"
+                                                                        value={ex.reps}
+                                                                        onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)}
+                                                                        placeholder="e.g. 10-12"
+                                                                        required
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <Input
+                                                                        label="Weight (Optional)"
+                                                                        value={ex.weight || ''}
+                                                                        onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)}
+                                                                        placeholder="e.g. 20kg"
+                                                                    />
+                                                                </div>
+                                                                <div className="md:col-span-4">
+                                                                    <Input
+                                                                        label="Notes (Optional)"
+                                                                        value={ex.notes || ''}
+                                                                        onChange={(e) => handleExerciseChange(index, 'notes', e.target.value)}
+                                                                        placeholder="e.g. Keep back straight"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </form>
                 </div>

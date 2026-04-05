@@ -21,6 +21,11 @@ const dietPlanSchema = new mongoose.Schema({
         default: false
     },
     meals: [{
+        dayOfWeek: {
+            type: String,
+            enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            required: true
+        },
         mealType: {
             type: String,
             required: true,
